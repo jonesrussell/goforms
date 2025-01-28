@@ -13,7 +13,7 @@ import (
 // Store defines the methods for user data access
 type Store interface {
 	Create(user *User) error
-	GetByID(id uint) (*User, error)
+	Get(id uint) (*User, error)
 	GetByEmail(email string) (*User, error)
 	Update(user *User) error
 	Delete(id uint) error
@@ -76,8 +76,8 @@ func (s *store) Create(user *User) error {
 	return nil
 }
 
-// GetByID retrieves a user by ID
-func (s *store) GetByID(id uint) (*User, error) {
+// Get retrieves a user by ID
+func (s *store) Get(id uint) (*User, error) {
 	query := `
 		SELECT id, email, hashed_password, created_at, updated_at
 		FROM users

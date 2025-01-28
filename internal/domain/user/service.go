@@ -36,7 +36,7 @@ type Service interface {
 
 // service implements the Service interface
 type service struct {
-	repo   UserRepository
+	repo   Repository
 	logger logging.Logger
 }
 
@@ -64,7 +64,7 @@ func (s *service) SignUp(ctx context.Context, user *User) (*User, error) {
 
 // GetUserByID retrieves a user by ID
 func (s *service) GetUserByID(ctx context.Context, id uint) (*User, error) {
-	user, err := s.repo.GetByID(id)
+	user, err := s.repo.Get(id)
 	if err != nil {
 		s.logger.Error("failed to get user", logging.Error(err))
 		return nil, fmt.Errorf("failed to get user: %w", err)

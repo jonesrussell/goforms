@@ -19,7 +19,7 @@ var Module = fx.Module("user",
 )
 
 // NewStore creates a new user repository
-func NewStore(db *database.DB, logger logging.Logger) UserRepository {
+func NewStore(db *database.DB, logger logging.Logger) Repository {
 	return &store{
 		db:     db,
 		logger: logger,
@@ -27,6 +27,6 @@ func NewStore(db *database.DB, logger logging.Logger) UserRepository {
 }
 
 // NewService creates a new user service
-func NewService(repo UserRepository) Service {
+func NewService(repo Repository) Service {
 	return &service{repo: repo}
 }

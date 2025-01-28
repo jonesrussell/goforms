@@ -35,8 +35,8 @@ func (u *User) CheckPassword(password string) bool {
 	return err == nil
 }
 
-// UserRequest represents the user signup request
-type UserRequest struct {
+// Request represents a user request.
+type Request struct {
 	Email     string `json:"email" validate:"required,email"`
 	Password  string `json:"password" validate:"required,min=8"`
 	FirstName string `json:"first_name" validate:"required"`
