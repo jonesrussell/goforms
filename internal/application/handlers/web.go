@@ -77,6 +77,7 @@ type WebHandler struct {
 //	    WithContactService(contactService),
 //	)
 func NewWebHandler(logger logging.Logger, opts ...WebHandlerOption) *WebHandler {
+	logger.Debug("creating web handler")
 	h := &WebHandler{
 		Base: NewBase(WithLogger(logger)),
 	}
@@ -95,6 +96,7 @@ func NewWebHandler(logger logging.Logger, opts ...WebHandlerOption) *WebHandler 
 //   - renderer
 //   - contactService
 func (h *WebHandler) Validate() error {
+	h.Logger.Debug("validating web handler")
 	if err := h.Base.Validate(); err != nil {
 		return err
 	}
@@ -112,12 +114,12 @@ func (h *WebHandler) Validate() error {
 // It validates that all required dependencies are available before
 // registering any routes.
 func (h *WebHandler) Register(e *echo.Echo) {
+	h.Logger.Debug("registering web routes")
+
 	if err := h.Validate(); err != nil {
 		h.Logger.Error("failed to validate handler", logging.Error(err))
 		return
 	}
-
-	h.Logger.Debug("registering web routes")
 
 	// Web pages
 	e.GET("/", h.handleHome)
@@ -162,6 +164,7 @@ func (h *WebHandler) handleHome(c echo.Context) error {
 		)
 		return fmt.Errorf("failed to render home page: %w", err)
 	}
+	h.Logger.Debug("home page rendered successfully")
 	return nil
 }
 
@@ -187,6 +190,7 @@ func (h *WebHandler) handleDemo(c echo.Context) error {
 		return fmt.Errorf("failed to render demo page: %w", err)
 	}
 
+	h.Logger.Debug("demo page rendered successfully")
 	return nil
 }
 
@@ -210,6 +214,7 @@ func (h *WebHandler) handleSignup(c echo.Context) error {
 		)
 		return fmt.Errorf("failed to render signup page: %w", err)
 	}
+	h.Logger.Debug("signup page rendered successfully")
 	return nil
 }
 
@@ -233,5 +238,6 @@ func (h *WebHandler) handleLogin(c echo.Context) error {
 		)
 		return fmt.Errorf("failed to render login page: %w", err)
 	}
+	h.Logger.Debug("login page rendered successfully")
 	return nil
 }

@@ -17,6 +17,7 @@ import (
 	"github.com/jonesrussell/goforms/internal/application/router"
 	"github.com/jonesrussell/goforms/internal/application/validator"
 	"github.com/jonesrussell/goforms/internal/domain"
+	"github.com/jonesrussell/goforms/internal/domain/contact"
 	"github.com/jonesrussell/goforms/internal/domain/user"
 	"github.com/jonesrussell/goforms/internal/presentation/view"
 )
@@ -66,6 +67,14 @@ func run() error {
 		),
 		// View module for rendering
 		view.Module,
+		// Add your WebHandler to the handlers
+		fx.Provide(
+			func(logger logging.Logger, renderer *view.Renderer, contactService contact.Service) handlers.Handler {
+				h := handlers.NewWebHandler(logger, handlers.WithRenderer(renderer), handlers.WithContactService(contactService))
+				logger.Debug("WebHandler created successfully")
+				return h
+			},
+		),
 		// Add debug logging for dependency injection
 		fx.Invoke(func(log logging.Logger) {
 			log.Debug("checking module initialization")
@@ -125,8 +134,22 @@ func startServer(p ServerParams) error {
 		logging.Int("handler_count", len(p.Handlers)),
 	)
 
+	// Log each handler type
 	for i, h := range p.Handlers {
 		p.Logger.Debug("handler available",
+			logging.Int("index", i),
+			logging.String("type", fmt.Sprintf("%T", h)),
+		)
+	}
+
+	// Register API handlers
+	for i, h := range p.Handlers {
+		p.Logger.Debug("registering handler",
+			logging.Int("index", i),
+			logging.String("type", fmt.Sprintf("%T", h)),
+		)
+		h.Register(p.Echo) // Call the Register method on each handler
+		p.Logger.Debug("handler registered",
 			logging.Int("index", i),
 			logging.String("type", fmt.Sprintf("%T", h)),
 		)
