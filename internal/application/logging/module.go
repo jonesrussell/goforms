@@ -1,18 +1,45 @@
 package logging
 
 import (
+	"fmt"
+	"os"
+
 	"go.uber.org/fx"
+	forbidden_zap "go.uber.org/zap"
 )
 
 // Module provides the logging dependencies
 var Module = fx.Module("logging",
 	fx.Provide(
+		NewLogger,  // Provide the logger based on the environment
 		NewFactory, // Provide the logger factory
-		fx.Annotate(func(f *Factory) Logger {
-			return f.CreateFromConfig() // Provide the logger using the factory
-		}, fx.As(new(Logger))), // Provide the logger
 	),
 )
+
+// NewLogger creates a new logger instance based on the environment configuration
+func NewLogger() Logger {
+	var zapLog *forbidden_zap.Logger
+	var zapSugaredLog *forbidden_zap.SugaredLogger
+	var err error
+
+	// Check if the environment is development
+	if os.Getenv("ENV") == "development" {
+		zapConfig := forbidden_zap.NewDevelopmentConfig()
+		zapLog, err = zapConfig.Build() // Build the development logger
+		if err != nil {
+			panic(fmt.Errorf("failed to create development logger: %w", err)) // Log error before panicking
+		}
+		zapSugaredLog = zapLog.Sugar() // Convert to SugaredLogger
+	} else {
+		prodLog, err := forbidden_zap.NewProduction() // Create the production logger
+		if err != nil {
+			panic(fmt.Errorf("failed to create production logger: %w", err)) // Log error before panicking
+		}
+		zapSugaredLog = prodLog.Sugar() // Convert to SugaredLogger
+	}
+
+	return &logger{log: zapSugaredLog} // Return the logger
+}
 
 // Factory creates loggers based on configuration
 type Factory struct{}

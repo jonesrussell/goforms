@@ -38,22 +38,12 @@ type logger struct {
 	log *forbidden_zap.SugaredLogger
 }
 
-// NewLogger creates a new logger instance
-func NewLogger() Logger {
-	zapLog, err := forbidden_zap.NewProduction()
-	if err != nil {
-		// Handle error appropriately, e.g., log it or panic
-		panic(err) // For simplicity, panic on error
-	}
-	return &logger{log: zapLog.Sugar()}
-}
-
 // NewTestLogger creates a logger suitable for testing
 func NewTestLogger() Logger {
 	config := forbidden_zap.NewDevelopmentConfig()
 	config.OutputPaths = []string{"stdout"}
 	zapLog, _ := config.Build()
-	return &logger{log: zapLog.Sugar()}
+	return &logger{log: zapLog.Sugar()} // Ensure this is SugaredLogger
 }
 
 // Info logs an info message

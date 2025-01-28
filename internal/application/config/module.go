@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"os"
 
 	"go.uber.org/fx"
 
@@ -14,16 +13,13 @@ import (
 var Module = fx.Module("config",
 	fx.Provide(
 		New, // Provide the New function to create a Config instance
+		// Do not provide the logger here again
 	),
 )
 
+// New creates a new configuration instance
 func New() (*Config, error) {
 	var cfg Config
-
-	// Simple debug output without logger dependency
-	if os.Getenv("APP_DEBUG") == "true" {
-		fmt.Printf("Loading configuration...\n")
-	}
 
 	if err := envconfig.Process("", &cfg); err != nil {
 		return nil, fmt.Errorf("failed to process config: %w", err)
