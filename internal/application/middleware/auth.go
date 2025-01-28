@@ -51,28 +51,36 @@ func NewJWTMiddleware(userService user.Service, secret string) echo.MiddlewareFu
 			}
 
 			// Validate token
-			token, err := config.UserService.ValidateToken(tokenString)
+			token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+				// Validate the algorithm
+				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+					return nil, echo.NewHTTPError(http.StatusUnauthorized, "invalid signing method")
+				}
+				// Return the secret key used for signing
+				return config.Secret, nil
+			})
+
 			if err != nil {
 				return echo.NewHTTPError(http.StatusUnauthorized, "invalid token")
 			}
 
-			claims, ok := token.Claims.(*JWTClaims)
-			if !ok || !token.Valid {
+			// Check if the token is valid and extract claims
+			if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+				// Check token type
+				tokenType, ok := claims["type"].(string)
+				if !ok || tokenType != "access" {
+					return echo.NewHTTPError(http.StatusUnauthorized, "invalid token type")
+				}
+
+				// Set user information in context
+				c.Set("user_id", uint(claims["user_id"].(float64)))
+				c.Set("email", claims["email"].(string))
+				c.Set("role", claims["role"].(string))
+
+				return next(c)
+			} else {
 				return echo.NewHTTPError(http.StatusUnauthorized, "invalid token claims")
 			}
-
-			// Check token type
-			tokenType, ok := (*claims)["type"].(string)
-			if !ok || tokenType != "access" {
-				return echo.NewHTTPError(http.StatusUnauthorized, "invalid token type")
-			}
-
-			// Set user information in context
-			c.Set("user_id", uint((*claims)["user_id"].(float64)))
-			c.Set("email", (*claims)["email"].(string))
-			c.Set("role", (*claims)["role"].(string))
-
-			return next(c)
 		}
 	}
 }

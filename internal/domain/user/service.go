@@ -23,11 +23,15 @@ var (
 
 // Service defines the methods for user-related operations
 type Service interface {
-	SignUp(ctx context.Context, user *User) error
+	SignUp(ctx context.Context, user *User) (*User, error)
 	GetUserByID(ctx context.Context, id uint) (*User, error)
 	UpdateUser(ctx context.Context, user *User) error
 	DeleteUser(ctx context.Context, id uint) error
 	ListUsers(ctx context.Context) ([]User, error)
+	IsTokenBlacklisted(token string) bool
+	ValidateToken(token string) (string, error)
+	Login(ctx context.Context, login *Login) (*TokenPair, error)
+	Logout(ctx context.Context, token string) error
 }
 
 // service implements the Service interface
@@ -36,26 +40,26 @@ type service struct {
 	logger logging.Logger
 }
 
-// SignUp registers a new user
-func (s *service) SignUp(ctx context.Context, user *User) error {
+// SignUp registers a new user and returns the created user
+func (s *service) SignUp(ctx context.Context, user *User) (*User, error) {
 	// Check if email already exists
 	existingUser, err := s.repo.GetByEmail(user.Email)
 	if err != nil {
 		s.logger.Error("failed to check existing user", logging.Error(err))
-		return fmt.Errorf("failed to create user: %w", err)
+		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
 	if existingUser != nil {
-		return fmt.Errorf("failed to create user: %w", ErrEmailAlreadyExists)
+		return nil, fmt.Errorf("failed to create user: %w", ErrEmailAlreadyExists)
 	}
 
 	// Save user
 	err = s.repo.Create(user)
 	if err != nil {
 		s.logger.Error("failed to create user", logging.Error(err))
-		return fmt.Errorf("failed to create user: %w", err)
+		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
 
-	return nil
+	return user, nil // Return the created user and nil error
 }
 
 // GetUserByID retrieves a user by ID
@@ -94,4 +98,32 @@ func (s *service) ListUsers(ctx context.Context) ([]User, error) {
 		return nil, fmt.Errorf("failed to list users: %w", err)
 	}
 	return users, nil
+}
+
+// IsTokenBlacklisted checks if the provided token is blacklisted
+func (s *service) IsTokenBlacklisted(token string) bool {
+	// Implement your logic to check if the token is blacklisted
+	// For example, check against a database or in-memory store
+	return false // Placeholder return value
+}
+
+// ValidateToken checks if the provided token is valid
+func (s *service) ValidateToken(token string) (string, error) {
+	// Implement your logic to validate the token
+	// For example, decode the token and check its validity
+	return token, nil // Placeholder return value
+}
+
+// Login authenticates a user and returns a token pair
+func (s *service) Login(ctx context.Context, login *Login) (*TokenPair, error) {
+	// Implement your logic to authenticate the user
+	// For example, check the credentials and generate tokens
+	return nil, nil // Placeholder return value
+}
+
+// Logout invalidates the user's token
+func (s *service) Logout(ctx context.Context, token string) error {
+	// Implement your logic to invalidate the token
+	// For example, mark the token as blacklisted in the database
+	return nil // Placeholder return value
 }

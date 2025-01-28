@@ -84,10 +84,14 @@ func (h *AuthHandler) handleSignup(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	newUser, err := h.userService.SignUp(c.Request().Context(), &signup)
+	// Convert Signup to User
+	newUser := user.ConvertSignupToUser(&signup)
+
+	// Call SignUp with the User struct
+	newUser, err := h.userService.SignUp(c.Request().Context(), newUser)
 	if err != nil {
 		h.LogError("failed to create user", err)
-		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to create user")
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
 	return c.JSON(http.StatusCreated, newUser)
