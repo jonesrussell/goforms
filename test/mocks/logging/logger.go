@@ -229,3 +229,6 @@ func (m *MockLogger) Reset() {
 	m.calls = m.calls[:0]
 	m.expected = m.expected[:0]
 }
+
+// Ensure MockLogger implements logging.Logger
+var _ logging.Logger = (*MockLogger)(nil)

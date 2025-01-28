@@ -1,4 +1,4 @@
-package contactmock
+package mockcontact
 
 import (
 	"context"
@@ -8,30 +8,20 @@ import (
 	"github.com/jonesrussell/goforms/internal/domain/contact"
 )
 
-// Ensure MockService implements contact.Service interface
-var _ contact.Service = (*MockService)(nil)
-
-// MockService is a mock implementation of the contact service
-type MockService struct {
+// Service is a mock implementation of the contact service
+type Service struct {
 	mu       sync.Mutex
 	calls    []mockCall
 	expected []mockCall
 }
 
-// mockCall represents a single method call
-type mockCall struct {
-	method string
-	args   []interface{}
-	ret    []interface{}
-}
-
-// NewMockService creates a new mock service
-func NewMockService() *MockService {
-	return &MockService{}
+// NewService creates a new mock service
+func NewService() *Service {
+	return &Service{}
 }
 
 // recordCall records a method call
-func (m *MockService) recordCall(method string, args []interface{}) []interface{} {
+func (m *Service) recordCall(method string, args []interface{}) []interface{} {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -47,26 +37,8 @@ func (m *MockService) recordCall(method string, args []interface{}) []interface{
 	return nil
 }
 
-// matchArgs compares two argument slices
-func matchArgs(exp, got []interface{}) bool {
-	if len(exp) != len(got) {
-		return false
-	}
-	for i := range exp {
-		// For context, just check if both are contexts
-		if _, expIsCtx := exp[i].(context.Context); expIsCtx {
-			_, gotIsCtx := got[i].(context.Context)
-			return gotIsCtx
-		}
-		if exp[i] != got[i] {
-			return false
-		}
-	}
-	return true
-}
-
 // ExpectSubmit sets up an expectation for Submit method
-func (m *MockService) ExpectSubmit(ctx context.Context, sub *contact.Submission, err error) {
+func (m *Service) ExpectSubmit(ctx context.Context, sub *contact.Submission, err error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.expected = append(m.expected, mockCall{
@@ -77,7 +49,7 @@ func (m *MockService) ExpectSubmit(ctx context.Context, sub *contact.Submission,
 }
 
 // ExpectListSubmissions sets up an expectation for ListSubmissions method
-func (m *MockService) ExpectListSubmissions(ctx context.Context, ret []contact.Submission, err error) {
+func (m *Service) ExpectListSubmissions(ctx context.Context, ret []contact.Submission, err error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.expected = append(m.expected, mockCall{
@@ -88,7 +60,7 @@ func (m *MockService) ExpectListSubmissions(ctx context.Context, ret []contact.S
 }
 
 // ExpectGetSubmission sets up an expectation for GetSubmission method
-func (m *MockService) ExpectGetSubmission(ctx context.Context, id int64, ret *contact.Submission, err error) {
+func (m *Service) ExpectGetSubmission(ctx context.Context, id int64, ret *contact.Submission, err error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.expected = append(m.expected, mockCall{
@@ -99,7 +71,7 @@ func (m *MockService) ExpectGetSubmission(ctx context.Context, id int64, ret *co
 }
 
 // ExpectUpdateSubmissionStatus sets up an expectation for UpdateSubmissionStatus method
-func (m *MockService) ExpectUpdateSubmissionStatus(ctx context.Context, id int64, status contact.Status, err error) {
+func (m *Service) ExpectUpdateSubmissionStatus(ctx context.Context, id int64, status contact.Status, err error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.expected = append(m.expected, mockCall{
@@ -110,7 +82,7 @@ func (m *MockService) ExpectUpdateSubmissionStatus(ctx context.Context, id int64
 }
 
 // Submit mocks the Submit method
-func (m *MockService) Submit(ctx context.Context, sub *contact.Submission) error {
+func (m *Service) Submit(ctx context.Context, sub *contact.Submission) error {
 	ret := m.recordCall("Submit", []interface{}{ctx, sub})
 	if ret == nil || ret[0] == nil {
 		return nil
@@ -119,7 +91,7 @@ func (m *MockService) Submit(ctx context.Context, sub *contact.Submission) error
 }
 
 // ListSubmissions mocks the ListSubmissions method
-func (m *MockService) ListSubmissions(ctx context.Context) ([]contact.Submission, error) {
+func (m *Service) ListSubmissions(ctx context.Context) ([]contact.Submission, error) {
 	ret := m.recordCall("ListSubmissions", []interface{}{ctx})
 	if ret == nil {
 		return nil, nil
@@ -136,7 +108,7 @@ func (m *MockService) ListSubmissions(ctx context.Context) ([]contact.Submission
 }
 
 // GetSubmission mocks the GetSubmission method
-func (m *MockService) GetSubmission(ctx context.Context, id int64) (*contact.Submission, error) {
+func (m *Service) GetSubmission(ctx context.Context, id int64) (*contact.Submission, error) {
 	ret := m.recordCall("GetSubmission", []interface{}{ctx, id})
 	if ret == nil {
 		return nil, nil
@@ -153,7 +125,7 @@ func (m *MockService) GetSubmission(ctx context.Context, id int64) (*contact.Sub
 }
 
 // UpdateSubmissionStatus mocks the UpdateSubmissionStatus method
-func (m *MockService) UpdateSubmissionStatus(ctx context.Context, id int64, status contact.Status) error {
+func (m *Service) UpdateSubmissionStatus(ctx context.Context, id int64, status contact.Status) error {
 	ret := m.recordCall("UpdateSubmissionStatus", []interface{}{ctx, id, status})
 	if ret == nil || ret[0] == nil {
 		return nil
@@ -162,7 +134,7 @@ func (m *MockService) UpdateSubmissionStatus(ctx context.Context, id int64, stat
 }
 
 // Verify checks if all expectations were met
-func (m *MockService) Verify() error {
+func (m *Service) Verify() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -184,7 +156,7 @@ func (m *MockService) Verify() error {
 }
 
 // Reset clears all calls and expectations
-func (m *MockService) Reset() {
+func (m *Service) Reset() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.calls = m.calls[:0]
