@@ -33,14 +33,10 @@ type Login struct {
 	Password string `json:"password" validate:"required"`
 }
 
-// Store defines the interface for user data operations
-type Store interface {
-	Create(user *User) error
-	GetByID(id uint) (*User, error)
-	GetByEmail(email string) (*User, error)
-	Update(user *User) error
-	Delete(id uint) error
-	List() ([]User, error)
+// TokenPair represents a pair of access and refresh tokens
+type TokenPair struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
 }
 
 // SetPassword hashes and sets the user's password
@@ -57,4 +53,23 @@ func (u *User) SetPassword(password string) error {
 func (u *User) CheckPassword(password string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(u.HashedPassword), []byte(password))
 	return err == nil
+}
+
+// NewUserFromSignup creates a new User from a Signup request
+func NewUserFromSignup(signup *Signup) (*User, error) {
+	user := &User{
+		Email:     signup.Email,
+		FirstName: signup.FirstName,
+		LastName:  signup.LastName,
+		Role:      "user",
+		Active:    true,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	if err := user.SetPassword(signup.Password); err != nil {
+		return nil, err
+	}
+
+	return user, nil
 }

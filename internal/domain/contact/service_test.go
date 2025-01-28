@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/jonesrussell/goforms/internal/domain/contact"
-	contactmock "github.com/jonesrussell/goforms/test/mocks/contact/store"
+	contactmock "github.com/jonesrussell/goforms/test/mocks/contact"
 	loggingmock "github.com/jonesrussell/goforms/test/mocks/logging"
 )
 

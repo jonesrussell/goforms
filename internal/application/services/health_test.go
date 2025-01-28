@@ -7,8 +7,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	mocklog "github.com/jonesrussell/goforms/test/mocks/logging"
 	"github.com/labstack/echo/v4"
+
+	mocklog "github.com/jonesrussell/goforms/test/mocks/logging"
 )
 
 type mockPingContexter struct {

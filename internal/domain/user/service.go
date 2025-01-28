@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+
 	"github.com/jonesrussell/goforms/internal/infrastructure/logging"
 )
 
@@ -23,12 +24,6 @@ var (
 	// ErrTokenBlacklisted indicates that the token has been blacklisted
 	ErrTokenBlacklisted = errors.New("token is blacklisted")
 )
-
-// TokenPair represents an access and refresh token pair
-type TokenPair struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
-}
 
 // Service defines the user service interface
 type Service interface {
@@ -48,23 +43,23 @@ type Service interface {
 // ServiceImpl implements the Service interface
 type ServiceImpl struct {
 	logger         logging.Logger
-	store          Store
+	repository     Repository
 	jwtSecret      []byte
 	tokenBlacklist sync.Map
 }
 
 // NewService creates a new user service
-func NewService(store Store, logger logging.Logger) Service {
+func NewService(repository Repository, logger logging.Logger) Service {
 	return &ServiceImpl{
-		store:  store,
-		logger: logger,
+		repository: repository,
+		logger:     logger,
 	}
 }
 
 // SignUp registers a new user
 func (s *ServiceImpl) SignUp(ctx context.Context, signup *Signup) (*User, error) {
 	// Check if email already exists
-	existingUser, err := s.store.GetByEmail(signup.Email)
+	existingUser, err := s.repository.GetByEmail(signup.Email)
 	if err != nil {
 		s.logger.Error("failed to check existing user", logging.Error(err))
 		return nil, fmt.Errorf("failed to create user: %w", err)
@@ -89,7 +84,7 @@ func (s *ServiceImpl) SignUp(ctx context.Context, signup *Signup) (*User, error)
 	}
 
 	// Save user
-	err = s.store.Create(user)
+	err = s.repository.Create(user)
 	if err != nil {
 		s.logger.Error("failed to create user", logging.Error(err))
 		return nil, fmt.Errorf("failed to create user: %w", err)
@@ -100,7 +95,7 @@ func (s *ServiceImpl) SignUp(ctx context.Context, signup *Signup) (*User, error)
 
 // Login authenticates a user and returns a token pair
 func (s *ServiceImpl) Login(ctx context.Context, login *Login) (*TokenPair, error) {
-	user, err := s.store.GetByEmail(login.Email)
+	user, err := s.repository.GetByEmail(login.Email)
 	if err != nil {
 		s.logger.Error("failed to get user by email", logging.Error(err))
 		return nil, fmt.Errorf("failed to login: %w", err)
@@ -231,7 +226,7 @@ func (s *ServiceImpl) generateTokenPair(user *User) (*TokenPair, error) {
 
 // GetUserByID retrieves a user by ID
 func (s *ServiceImpl) GetUserByID(ctx context.Context, id uint) (*User, error) {
-	user, err := s.store.GetByID(id)
+	user, err := s.repository.GetByID(id)
 	if err != nil {
 		s.logger.Error("failed to get user", logging.Error(err))
 		return nil, fmt.Errorf("failed to get user: %w", err)
@@ -241,7 +236,7 @@ func (s *ServiceImpl) GetUserByID(ctx context.Context, id uint) (*User, error) {
 
 // GetUserByEmail retrieves a user by email
 func (s *ServiceImpl) GetUserByEmail(ctx context.Context, email string) (*User, error) {
-	user, err := s.store.GetByEmail(email)
+	user, err := s.repository.GetByEmail(email)
 	if err != nil {
 		s.logger.Error("failed to get user", logging.Error(err))
 		return nil, fmt.Errorf("failed to get user: %w", err)
@@ -251,7 +246,7 @@ func (s *ServiceImpl) GetUserByEmail(ctx context.Context, email string) (*User, 
 
 // UpdateUser updates user information
 func (s *ServiceImpl) UpdateUser(ctx context.Context, user *User) error {
-	if err := s.store.Update(user); err != nil {
+	if err := s.repository.Update(user); err != nil {
 		s.logger.Error("failed to update user", logging.Error(err))
 		return fmt.Errorf("failed to update user: %w", err)
 	}
@@ -260,7 +255,7 @@ func (s *ServiceImpl) UpdateUser(ctx context.Context, user *User) error {
 
 // DeleteUser removes a user
 func (s *ServiceImpl) DeleteUser(ctx context.Context, id uint) error {
-	if err := s.store.Delete(id); err != nil {
+	if err := s.repository.Delete(id); err != nil {
 		s.logger.Error("failed to delete user", logging.Error(err))
 		return fmt.Errorf("failed to delete user: %w", err)
 	}
@@ -269,7 +264,7 @@ func (s *ServiceImpl) DeleteUser(ctx context.Context, id uint) error {
 
 // ListUsers returns all users
 func (s *ServiceImpl) ListUsers(ctx context.Context) ([]User, error) {
-	users, err := s.store.List()
+	users, err := s.repository.List()
 	if err != nil {
 		s.logger.Error("failed to list users", logging.Error(err))
 		return nil, fmt.Errorf("failed to list users: %w", err)

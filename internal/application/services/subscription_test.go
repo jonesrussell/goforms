@@ -14,12 +14,12 @@ import (
 	"github.com/jonesrussell/goforms/internal/application/services"
 	"github.com/jonesrussell/goforms/internal/domain/subscription"
 	mocklogging "github.com/jonesrussell/goforms/test/mocks/logging"
-	storemock "github.com/jonesrussell/goforms/test/mocks/store/subscription"
+	storemock "github.com/jonesrussell/goforms/test/mocks/subscription"
 )
 
 func TestSubscriptionHandler_HandleSubscribe(t *testing.T) {
 	// Setup
-	mockStore := storemock.NewMockStore(t)
+	mockStore := storemock.NewMockStore()
 	mockLogger := mocklogging.NewMockLogger()
 	handler := services.NewSubscriptionHandler(mockStore, mockLogger)
 
@@ -101,7 +101,7 @@ func TestSubscriptionHandler_HandleSubscribe(t *testing.T) {
 
 func TestSubscriptionService(t *testing.T) {
 	t.Run("create subscription", func(t *testing.T) {
-		mockStore := storemock.NewMockStore(t)
+		mockStore := storemock.NewMockStore()
 		mockLogger := mocklogging.NewMockLogger()
 		service := subscription.NewService(mockStore, mockLogger)
 		if service == nil {
@@ -130,7 +130,7 @@ func TestSubscriptionService(t *testing.T) {
 	})
 
 	t.Run("create subscription error", func(t *testing.T) {
-		mockStore := storemock.NewMockStore(t)
+		mockStore := storemock.NewMockStore()
 		mockLogger := mocklogging.NewMockLogger()
 		service := subscription.NewService(mockStore, mockLogger)
 		if service == nil {
@@ -164,7 +164,7 @@ func TestSubscriptionService(t *testing.T) {
 	})
 
 	t.Run("list subscriptions", func(t *testing.T) {
-		mockStore := storemock.NewMockStore(t)
+		mockStore := storemock.NewMockStore()
 		mockLogger := mocklogging.NewMockLogger()
 		service := subscription.NewService(mockStore, mockLogger)
 		if service == nil {
@@ -191,7 +191,7 @@ func TestSubscriptionService(t *testing.T) {
 	})
 
 	t.Run("list subscriptions error", func(t *testing.T) {
-		mockStore := storemock.NewMockStore(t)
+		mockStore := storemock.NewMockStore()
 		mockLogger := mocklogging.NewMockLogger()
 		service := subscription.NewService(mockStore, mockLogger)
 		if service == nil {

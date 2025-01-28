@@ -6,8 +6,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/jonesrussell/goforms/internal/infrastructure/logging"
 	"github.com/labstack/echo/v4"
+
+	"github.com/jonesrussell/goforms/internal/infrastructure/logging"
 )
 
 func TestResponse(t *testing.T) {

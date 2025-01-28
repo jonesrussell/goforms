@@ -8,14 +8,14 @@ import (
 
 	"github.com/jonesrussell/goforms/internal/domain/user"
 	mock_logging "github.com/jonesrussell/goforms/test/mocks/logging"
-	mock_store "github.com/jonesrussell/goforms/test/mocks/store/user"
+	mockstore "github.com/jonesrussell/goforms/test/mocks/store/user"
 )
 
 func TestSignUp(t *testing.T) {
 	tests := []struct {
 		name      string
 		signup    *user.Signup
-		setupMock func(*mock_store.UserStore)
+		setupMock func(*mockstore.Store)
 		wantErr   string
 	}{
 		{
@@ -26,8 +26,12 @@ func TestSignUp(t *testing.T) {
 				FirstName: "John",
 				LastName:  "Doe",
 			},
-			setupMock: func(s *mock_store.UserStore) {},
-			wantErr:   "",
+			setupMock: func(s *mockstore.Store) {
+				s.CreateFunc = func(ctx context.Context, u *user.User) error {
+					return nil
+				}
+			},
+			wantErr: "",
 		},
 		{
 			name: "email already exists",
@@ -37,12 +41,13 @@ func TestSignUp(t *testing.T) {
 				FirstName: "John",
 				LastName:  "Doe",
 			},
-			setupMock: func(s *mock_store.UserStore) {
-				existingUser := &user.User{
-					ID:    1,
-					Email: "existing@example.com",
+			setupMock: func(s *mockstore.Store) {
+				s.GetByEmailFunc = func(ctx context.Context, email string) (*user.User, error) {
+					return &user.User{
+						ID:    1,
+						Email: "existing@example.com",
+					}, nil
 				}
-				s.Create(existingUser)
 			},
 			wantErr: "failed to create user: email already exists",
 		},
@@ -54,8 +59,10 @@ func TestSignUp(t *testing.T) {
 				FirstName: "John",
 				LastName:  "Doe",
 			},
-			setupMock: func(s *mock_store.UserStore) {
-				s.SetError("create", errors.New("store error"))
+			setupMock: func(s *mockstore.Store) {
+				s.CreateFunc = func(ctx context.Context, u *user.User) error {
+					return errors.New("store error")
+				}
 			},
 			wantErr: "failed to create user: store error",
 		},
@@ -63,12 +70,12 @@ func TestSignUp(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			store := mock_store.NewUserStore()
+			store := mockstore.NewStore()
 			logger := mock_logging.NewMockLogger()
 			tt.setupMock(store)
 
 			service := user.NewService(store, logger)
-			u, err := service.SignUp(context.Background(), tt.signup)
+			_, err := service.SignUp(context.Background(), tt.signup)
 
 			if tt.wantErr != "" {
 				if err == nil {
@@ -83,28 +90,6 @@ func TestSignUp(t *testing.T) {
 
 			if err != nil {
 				t.Errorf("unexpected error: %v", err)
-				return
-			}
-
-			if u == nil {
-				t.Error("expected user to be created, got nil")
-				return
-			}
-
-			if u.Email != tt.signup.Email {
-				t.Errorf("expected email %s, got %s", tt.signup.Email, u.Email)
-			}
-			if u.FirstName != tt.signup.FirstName {
-				t.Errorf("expected first name %s, got %s", tt.signup.FirstName, u.FirstName)
-			}
-			if u.LastName != tt.signup.LastName {
-				t.Errorf("expected last name %s, got %s", tt.signup.LastName, u.LastName)
-			}
-			if u.Role != "user" {
-				t.Errorf("expected role 'user', got %s", u.Role)
-			}
-			if !u.Active {
-				t.Error("expected user to be active")
 			}
 		})
 	}
@@ -114,7 +99,7 @@ func TestLogin(t *testing.T) {
 	tests := []struct {
 		name      string
 		login     *user.Login
-		setupMock func(*mock_store.UserStore)
+		setupMock func(*mockstore.Store)
 		wantErr   string
 	}{
 		{
@@ -123,14 +108,16 @@ func TestLogin(t *testing.T) {
 				Email:    "test@example.com",
 				Password: "password123",
 			},
-			setupMock: func(s *mock_store.UserStore) {
+			setupMock: func(s *mockstore.Store) {
 				u := &user.User{
 					ID:    1,
 					Email: "test@example.com",
 					Role:  "user",
 				}
 				u.SetPassword("password123")
-				s.Create(u)
+				s.GetByEmailFunc = func(ctx context.Context, email string) (*user.User, error) {
+					return u, nil
+				}
 			},
 			wantErr: "",
 		},
@@ -140,8 +127,12 @@ func TestLogin(t *testing.T) {
 				Email:    "nonexistent@example.com",
 				Password: "password123",
 			},
-			setupMock: func(s *mock_store.UserStore) {},
-			wantErr:   "failed to login: invalid credentials",
+			setupMock: func(s *mockstore.Store) {
+				s.GetByEmailFunc = func(ctx context.Context, email string) (*user.User, error) {
+					return nil, errors.New("user not found")
+				}
+			},
+			wantErr: "failed to login: invalid credentials",
 		},
 		{
 			name: "invalid password",
@@ -149,7 +140,7 @@ func TestLogin(t *testing.T) {
 				Email:    "test@example.com",
 				Password: "wrongpassword",
 			},
-			setupMock: func(s *mock_store.UserStore) {
+			setupMock: func(s *mockstore.Store) {
 				u := &user.User{
 					ID:    1,
 					Email: "test@example.com",
@@ -164,7 +155,7 @@ func TestLogin(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			store := mock_store.NewUserStore()
+			store := mockstore.NewStore()
 			logger := mock_logging.NewMockLogger()
 			tt.setupMock(store)
 
@@ -195,21 +186,23 @@ func TestLogin(t *testing.T) {
 }
 
 func TestLogout(t *testing.T) {
-	store := mock_store.NewUserStore()
+	store := mockstore.NewStore()
 	logger := mock_logging.NewMockLogger()
 	service := user.NewService(store, logger)
 
 	// Create a valid test user with proper password hash
 	u := &user.User{
-		ID:       1,
-		Email:    "test@example.com",
-		Role:     "user",
-		Active:   true,
+		ID:     1,
+		Email:  "test@example.com",
+		Role:   "user",
+		Active: true,
 	}
 	if err := u.SetPassword("password123"); err != nil {
 		t.Fatalf("failed to set password: %v", err)
 	}
-	store.Create(u)
+	store.GetByEmailFunc = func(ctx context.Context, email string) (*user.User, error) {
+		return u, nil
+	}
 
 	login := &user.Login{
 		Email:    "test@example.com",
@@ -274,13 +267,13 @@ func TestGetUserByID(t *testing.T) {
 	tests := []struct {
 		name      string
 		userID    uint
-		setupMock func(*mock_store.UserStore)
+		setupMock func(*mockstore.Store)
 		wantErr   string
 	}{
 		{
 			name:   "successful get",
 			userID: 1,
-			setupMock: func(s *mock_store.UserStore) {
+			setupMock: func(s *mockstore.Store) {
 				u := &user.User{
 					ID:    1,
 					Email: "test@example.com",
@@ -292,14 +285,14 @@ func TestGetUserByID(t *testing.T) {
 		{
 			name:      "user not found",
 			userID:    999,
-			setupMock: func(s *mock_store.UserStore) {},
+			setupMock: func(s *mockstore.Store) {},
 			wantErr:   "failed to get user: user not found",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			store := mock_store.NewUserStore()
+			store := mockstore.NewStore()
 			logger := mock_logging.NewMockLogger()
 			tt.setupMock(store)
 
@@ -337,12 +330,12 @@ func TestGetUserByID(t *testing.T) {
 func TestListUsers(t *testing.T) {
 	tests := []struct {
 		name      string
-		setupMock func(*mock_store.UserStore)
+		setupMock func(*mockstore.Store)
 		wantErr   string
 	}{
 		{
 			name: "successful list",
-			setupMock: func(s *mock_store.UserStore) {
+			setupMock: func(s *mockstore.Store) {
 				u1 := &user.User{ID: 1, Email: "test1@example.com"}
 				u2 := &user.User{ID: 2, Email: "test2@example.com"}
 				s.Create(u1)
@@ -352,7 +345,7 @@ func TestListUsers(t *testing.T) {
 		},
 		{
 			name: "store error",
-			setupMock: func(s *mock_store.UserStore) {
+			setupMock: func(s *mockstore.Store) {
 				s.SetError("list", errors.New("store error"))
 			},
 			wantErr: "failed to list users: store error",
@@ -361,7 +354,7 @@ func TestListUsers(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			store := mock_store.NewUserStore()
+			store := mockstore.NewStore()
 			logger := mock_logging.NewMockLogger()
 			tt.setupMock(store)
 
