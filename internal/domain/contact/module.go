@@ -17,13 +17,13 @@ var Module = fx.Module("contact",
 
 // NewStore creates a new contact store
 func NewStore(db *database.DB, logger logging.Logger) Store {
-	return &Repository{
+	return &store{
 		db:     db,
 		logger: logger,
 	}
 }
 
-// NewService creates a new contact service
+// NewService creates a new service instance.
 func NewService(store Store, logger logging.Logger) Service {
 	return &ServiceImpl{
 		store:  store,

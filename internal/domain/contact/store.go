@@ -23,11 +23,6 @@ type store struct {
 	logger logging.Logger
 }
 
-// NewStore creates a new store instance.
-func NewStore() Store {
-	return &store{}
-}
-
 // Create stores a new contact form submission
 func (s *store) Create(ctx context.Context, sub *common.Submission) error {
 	query := `

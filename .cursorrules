@@ -4,6 +4,7 @@
 - Follow domain-driven design principles
 - Maintain clear separation of concerns:
   - **Domain Layer**: Business logic and interfaces
+  - **Infrastructure Layer**: External implementations
   - **Application Layer**: Use case orchestration
   - **Presentation Layer**: UI/API concerns
 - Each package must have a `README.md` describing its purpose
@@ -75,3 +76,13 @@
 ## Error Handling
 - Use custom error types when beneficial and include context in error messages
 - Log errors with appropriate stack traces and handle all error cases explicitly
+
+## Taskfile.yml
+- Use `Taskfile.yml` for managing project tasks, including installation, building, running, and testing
+- Review the `Taskfile.yml` so you know what tasks are available
+
+## Migrations
+- Migration files are organized in a dedicated `migrations` directory
+- Use up and down migration files to manage database schema changes
+- Ensure migrations are idempotent and can be applied or rolled back without data loss
+- Include comments in migration files to describe the purpose and changes made

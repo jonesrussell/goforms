@@ -93,7 +93,7 @@ func (s *ServiceImpl) UpdateSubmissionStatus(ctx context.Context, id int64, stat
 	}
 
 	// Convert statusEnum to string when calling UpdateStatus
-	if err := s.store.UpdateStatus(ctx, id, statusEnum); err != nil {
+	if err := s.store.UpdateStatus(ctx, id, string(statusEnum)); err != nil {
 		s.logger.Error("failed to update submission status",
 			logging.Error(err),
 			logging.String("id", strconv.FormatInt(id, 10)),
@@ -108,9 +108,4 @@ func (s *ServiceImpl) UpdateSubmissionStatus(ctx context.Context, id int64, stat
 	)
 
 	return nil
-}
-
-// NewService creates a new service instance.
-func NewService(store Store) Service {
-	return &ServiceImpl{store: store}
 }
