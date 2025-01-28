@@ -2,6 +2,8 @@ package config
 
 import (
 	"time"
+
+	"github.com/jonesrussell/goforms/internal/application/loggingconfig"
 )
 
 // AppConfig holds application-level configuration
@@ -21,6 +23,14 @@ type Config struct {
 	Security  SecurityConfig
 	RateLimit RateLimitConfig
 }
+
+// GetEnv returns the application environment
+func (c *Config) GetEnv() string {
+	return c.App.Env
+}
+
+// LoggerConfig interface implementation
+var _ loggingconfig.LoggerConfig = (*Config)(nil)
 
 // DatabaseConfig holds all database-related configuration
 type DatabaseConfig struct {
@@ -69,4 +79,9 @@ type RateLimitConfig struct {
 	Burst      int           `envconfig:"RATE_BURST" default:"5"`
 	TimeWindow time.Duration `envconfig:"RATE_LIMIT_TIME_WINDOW" default:"1m"`
 	PerIP      bool          `envconfig:"RATE_LIMIT_PER_IP" default:"true"`
+}
+
+// LoggerConfig defines the configuration needed for logging
+type LoggerConfig interface {
+	GetEnv() string
 }

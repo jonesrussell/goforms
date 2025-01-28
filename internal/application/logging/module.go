@@ -2,8 +2,8 @@ package logging
 
 import (
 	"fmt"
-	"os"
 
+	"github.com/jonesrussell/goforms/internal/application/loggingconfig"
 	"go.uber.org/fx"
 	forbidden_zap "go.uber.org/zap"
 )
@@ -17,13 +17,13 @@ var Module = fx.Module("logging",
 )
 
 // NewLogger creates a new logger instance based on the environment configuration
-func NewLogger() Logger {
+func NewLogger(cfg loggingconfig.LoggerConfig) Logger {
 	var zapLog *forbidden_zap.Logger
 	var zapSugaredLog *forbidden_zap.SugaredLogger
 	var err error
 
 	// Check if the environment is development
-	if os.Getenv("ENV") == "development" {
+	if cfg.GetEnv() == "development" {
 		zapConfig := forbidden_zap.NewDevelopmentConfig()
 		zapLog, err = zapConfig.Build() // Build the development logger
 		if err != nil {

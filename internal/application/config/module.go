@@ -6,6 +6,7 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/jonesrussell/goforms/internal/application/loggingconfig"
 	"github.com/kelseyhightower/envconfig"
 )
 
@@ -13,7 +14,9 @@ import (
 var Module = fx.Module("config",
 	fx.Provide(
 		New, // Provide the New function to create a Config instance
-		// Do not provide the logger here again
+		fx.Annotate(func(cfg *Config) loggingconfig.LoggerConfig {
+			return cfg // Pass the LoggerConfig interface to the logger
+		}, fx.As(new(loggingconfig.LoggerConfig))), // Provide the LoggerConfig interface
 	),
 )
 
