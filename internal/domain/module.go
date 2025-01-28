@@ -9,16 +9,12 @@ import (
 
 // Module combines all domain services
 var Module = fx.Options(
+	user.Module,
 	fx.Provide(
 		// Contact service
 		fx.Annotate(
 			contact.NewService,
 			fx.As(new(contact.Service)),
-		),
-		// User service
-		fx.Annotate(
-			user.NewService,
-			fx.As(new(user.Service)),
 		),
 	),
 )
