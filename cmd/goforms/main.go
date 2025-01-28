@@ -10,6 +10,7 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/jonesrussell/goforms/internal/application/config"
+	"github.com/jonesrussell/goforms/internal/application/database"
 	"github.com/jonesrussell/goforms/internal/application/handlers"
 	"github.com/jonesrussell/goforms/internal/application/logging"
 	"github.com/jonesrussell/goforms/internal/application/middleware"
@@ -53,6 +54,8 @@ func run() error {
 		logging.Module,
 		config.Module,
 		domain.Module,
+		database.Module,
+		user.Module,
 		// Provide the Echo instance
 		fx.Provide(
 			newServer, // This will provide *echo.Echo

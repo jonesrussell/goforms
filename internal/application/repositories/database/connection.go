@@ -53,8 +53,8 @@ func NewDB(lc fx.Lifecycle, cfg *config.Config, logger logging.Logger) (*DB, err
 	// Configure connection pool
 	db.SetMaxOpenConns(cfg.Database.MaxOpenConns)
 	db.SetMaxIdleConns(cfg.Database.MaxIdleConns)
-	db.SetConnMaxLifetime(cfg.Database.ConnMaxLifetme)
-	db.SetConnMaxIdleTime(cfg.Database.ConnMaxLifetme) // Using same value for idle time
+	db.SetConnMaxLifetime(cfg.Database.ConnMaxLifetime)
+	db.SetConnMaxIdleTime(cfg.Database.ConnMaxLifetime)
 
 	// Verify connection
 	logger.Debug("pinging database to verify connection")
