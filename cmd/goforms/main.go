@@ -9,6 +9,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"go.uber.org/fx"
 
+	"github.com/jonesrussell/goforms/internal/application"
 	"github.com/jonesrussell/goforms/internal/application/config"
 	"github.com/jonesrussell/goforms/internal/application/database"
 	"github.com/jonesrussell/goforms/internal/application/handlers"
@@ -55,7 +56,8 @@ func run() error {
 		logging.Module,
 		config.Module,
 		database.Module,
-		domain.Module, // Provide the Echo instance
+		domain.Module,
+		application.Module,
 		fx.Provide(
 			newServer, // This will provide *echo.Echo
 		),
@@ -65,8 +67,6 @@ func run() error {
 				return versionInfo
 			},
 		),
-		// View module for rendering
-		view.Module,
 		// Add your WebHandler to the handlers
 		fx.Provide(
 			func(logger logging.Logger, renderer *view.Renderer, contactService contact.Service) handlers.Handler {
