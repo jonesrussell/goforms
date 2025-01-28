@@ -67,6 +67,12 @@ func run() error {
 				return versionInfo
 			},
 		),
+		// Provide the AuthHandler with logger and userService directly
+		fx.Provide(
+			func(logger logging.Logger, userService user.Service) *handlers.AuthHandler {
+				return handlers.NewAuthHandler(logger, userService)
+			},
+		),
 		// Add your WebHandler to the handlers
 		fx.Provide(
 			func(logger logging.Logger, renderer *view.Renderer, contactService contact.Service) handlers.Handler {

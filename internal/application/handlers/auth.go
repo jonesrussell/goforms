@@ -13,38 +13,22 @@ import (
 // AuthHandlerOption defines an auth handler option
 type AuthHandlerOption func(*AuthHandler)
 
-// WithUserService sets the user service
-func WithUserService(svc user.Service) AuthHandlerOption {
-	return func(h *AuthHandler) {
-		h.userService = svc
-	}
-}
-
 // AuthHandler handles authentication related requests
 type AuthHandler struct {
-	Base
 	userService user.Service
 	Logger      logging.Logger
 }
 
 // NewAuthHandler creates a new auth handler
-func NewAuthHandler(logger logging.Logger, opts ...AuthHandlerOption) *AuthHandler {
-	h := &AuthHandler{
-		Logger: logger,
+func NewAuthHandler(logger logging.Logger, userService user.Service) *AuthHandler {
+	return &AuthHandler{
+		Logger:      logger,
+		userService: userService,
 	}
-
-	for _, opt := range opts {
-		opt(h)
-	}
-
-	return h
 }
 
 // Validate validates that required dependencies are set
 func (h *AuthHandler) Validate() error {
-	if err := h.Base.Validate(); err != nil {
-		return err
-	}
 	if h.userService == nil {
 		return fmt.Errorf("user service is required")
 	}

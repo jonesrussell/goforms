@@ -26,7 +26,7 @@ var Module = fx.Options(
 		}),
 		// Add other handlers as needed
 		AsHandler(func(logger logging.Logger, userService user.Service) *handlers.AuthHandler {
-			return handlers.NewAuthHandler(logger, handlers.WithUserService(userService))
+			return handlers.NewAuthHandler(logger, userService)
 		}),
 	),
 )
