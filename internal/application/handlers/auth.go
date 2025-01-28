@@ -24,12 +24,13 @@ func WithUserService(svc user.Service) AuthHandlerOption {
 type AuthHandler struct {
 	Base
 	userService user.Service
+	Logger      logging.Logger
 }
 
 // NewAuthHandler creates a new auth handler
 func NewAuthHandler(logger logging.Logger, opts ...AuthHandlerOption) *AuthHandler {
 	h := &AuthHandler{
-		Base: NewBase(WithLogger(logger)),
+		Logger: logger,
 	}
 
 	for _, opt := range opts {
@@ -46,6 +47,9 @@ func (h *AuthHandler) Validate() error {
 	}
 	if h.userService == nil {
 		return fmt.Errorf("user service is required")
+	}
+	if h.Logger == nil {
+		return fmt.Errorf("logger is required")
 	}
 	return nil
 }
@@ -64,36 +68,26 @@ func (h *AuthHandler) Register(e *echo.Echo) {
 }
 
 // handleSignup handles user registration
-// @Summary Register a new user
-// @Description Register a new user with the provided information
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Param signup body user.Signup true "User signup information"
-// @Success 201 {object} user.User
-// @Failure 400 {object} echo.HTTPError
-// @Failure 409 {object} echo.HTTPError
-// @Router /api/v1/auth/signup [post]
 func (h *AuthHandler) handleSignup(c echo.Context) error {
 	var signup user.Signup
 	if err := c.Bind(&signup); err != nil {
+		h.Logger.LogWithPrefix("error", "auth", "failed to bind request", logging.Error(err))
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request format")
 	}
 
 	if err := c.Validate(signup); err != nil {
+		h.Logger.LogWithPrefix("error", "auth", "validation failed", logging.Error(err))
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	// Convert Signup to User
 	newUser := user.ConvertSignupToUser(&signup)
-
-	// Call SignUp with the User struct
 	newUser, err := h.userService.SignUp(c.Request().Context(), newUser)
 	if err != nil {
-		h.LogError("failed to create user", err)
+		h.Logger.LogWithPrefix("error", "auth", "failed to create user", logging.Error(err))
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
+	h.Logger.LogWithPrefix("info", "auth", "User created successfully", logging.String("email", signup.Email))
 	return c.JSON(http.StatusCreated, newUser)
 }
 
@@ -120,7 +114,7 @@ func (h *AuthHandler) handleLogin(c echo.Context) error {
 
 	tokens, err := h.userService.Login(c.Request().Context(), &login)
 	if err != nil {
-		h.LogError("failed to authenticate user", err)
+		h.Logger.Error("auth: failed to authenticate user", logging.Error(err))
 		return echo.NewHTTPError(http.StatusUnauthorized, "Invalid credentials")
 	}
 
@@ -144,7 +138,7 @@ func (h *AuthHandler) handleLogout(c echo.Context) error {
 	}
 
 	if err := h.userService.Logout(c.Request().Context(), token); err != nil {
-		h.LogError("failed to logout user", err)
+		h.Logger.Error("auth: failed to logout user", logging.Error(err))
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to logout")
 	}
 

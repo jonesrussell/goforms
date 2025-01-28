@@ -27,12 +27,11 @@ import (
 //	)
 //	handler.Register(e) // Register routes with Echo
 type ContactHandler struct {
-	*Base
+	Base
 	contactService contact.Service
 }
 
-// ContactHandlerOption configures a ContactHandler. It follows the functional
-// options pattern for clean and type-safe dependency injection.
+// ContactHandlerOption configures a ContactHandler.
 type ContactHandlerOption func(*ContactHandler)
 
 // WithContactServiceOpt sets the contact service for the handler.
@@ -48,7 +47,7 @@ func WithContactServiceOpt(svc contact.Service) ContactHandlerOption {
 // provided using WithContactServiceOpt.
 func NewContactHandler(logger logging.Logger, opts ...ContactHandlerOption) *ContactHandler {
 	h := &ContactHandler{
-		Base: &Base{Logger: logger},
+		Base: NewBase(WithLogger(logger)), // Use WithLogger from base.go
 	}
 
 	for _, opt := range opts {
@@ -76,7 +75,7 @@ func (h *ContactHandler) Validate() error {
 // if configuration is incomplete.
 func (h *ContactHandler) Register(e *echo.Echo) {
 	if err := h.Validate(); err != nil {
-		h.Logger.Error("failed to validate handler", logging.Error(err))
+		h.LogError("failed to validate handler", err)
 		return
 	}
 

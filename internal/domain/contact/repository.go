@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/jonesrussell/goforms/internal/application/logging"
 	"github.com/jonesrussell/goforms/internal/application/repositories/database"
@@ -90,26 +91,28 @@ func (s *Repository) Get(ctx context.Context, id int64) (*common.Submission, err
 }
 
 // UpdateStatus updates the status of a contact submission
-func (s *Repository) UpdateStatus(ctx context.Context, id int64, status common.Status) error {
+func (r *Repository) UpdateStatus(ctx context.Context, id int64, status string) error {
 	query := `
 		UPDATE contact_submissions
 		SET status = ?, updated_at = NOW()
 		WHERE id = ?
 	`
 
-	result, err := s.db.ExecContext(ctx, query, string(status), id)
+	r.logger.Debug("updating contact submission status", logging.Int64("id", id), logging.String("status", status))
+
+	result, err := r.db.ExecContext(ctx, query, status, id)
 	if err != nil {
-		s.logger.Error("failed to update contact submission status", logging.Error(err))
-		return err
+		r.logger.Error("failed to update contact submission status", logging.Error(err))
+		return fmt.Errorf("failed to update contact submission status: %w", err)
 	}
 
-	rows, err := result.RowsAffected()
+	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get rows affected: %w", err)
 	}
 
-	if rows == 0 {
-		return errors.New("contact submission not found")
+	if rowsAffected == 0 {
+		return fmt.Errorf("contact submission not found: %d", id)
 	}
 
 	return nil

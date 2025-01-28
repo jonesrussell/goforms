@@ -77,7 +77,6 @@ type WebHandler struct {
 //	    WithContactService(contactService),
 //	)
 func NewWebHandler(logger logging.Logger, opts ...WebHandlerOption) *WebHandler {
-	logger.Debug("creating web handler")
 	h := &WebHandler{
 		Base: NewBase(WithLogger(logger)),
 	}

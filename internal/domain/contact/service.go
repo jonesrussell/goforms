@@ -109,3 +109,8 @@ func (s *ServiceImpl) UpdateSubmissionStatus(ctx context.Context, id int64, stat
 
 	return nil
 }
+
+// NewService creates a new service instance.
+func NewService(store Store) Service {
+	return &ServiceImpl{store: store}
+}

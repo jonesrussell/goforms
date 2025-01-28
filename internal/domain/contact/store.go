@@ -9,18 +9,23 @@ import (
 	"github.com/jonesrussell/goforms/internal/domain/common"
 )
 
-// Store defines the methods for contact data access
+// Store defines the interface for contact submissions.
 type Store interface {
 	Create(ctx context.Context, sub *common.Submission) error
-	List(ctx context.Context) ([]common.Submission, error)
 	Get(ctx context.Context, id int64) (*common.Submission, error)
-	UpdateStatus(ctx context.Context, id int64, status common.Status) error
+	List(ctx context.Context) ([]common.Submission, error)
+	UpdateStatus(ctx context.Context, id int64, status string) error
 }
 
-// store implements the Store interface
+// store implements the Store interface.
 type store struct {
 	db     *database.DB
 	logger logging.Logger
+}
+
+// NewStore creates a new store instance.
+func NewStore() Store {
+	return &store{}
 }
 
 // Create stores a new contact form submission

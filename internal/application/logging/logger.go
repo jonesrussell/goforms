@@ -2,6 +2,7 @@
 package logging
 
 import (
+	"fmt"
 	"time"
 
 	forbidden_zap "go.uber.org/zap"
@@ -23,6 +24,10 @@ type Logger interface {
 	Debug(msg string, fields ...interface{})
 	// Warn logs a message at warn level with optional fields
 	Warn(msg string, fields ...Field)
+	// WithPrefix creates a new logger with a prefix
+	WithPrefix(prefix string) Logger
+	// LogWithPrefix logs a message with a specified prefix
+	LogWithPrefix(level string, prefix, msg string, fields ...Field)
 }
 
 // Field represents a logging field.
@@ -126,3 +131,24 @@ type FxEventLogger struct {
 }
 
 // Implement any methods you need for FxEventLogger
+
+// WithPrefix creates a new logger with a specified prefix
+func (l *logger) WithPrefix(prefix string) Logger {
+	return &logger{
+		log: l.log.With("prefix", prefix), // Assuming zap supports this
+	}
+}
+
+// LogWithPrefix logs a message with a specified prefix
+func (l *logger) LogWithPrefix(level string, prefix, msg string, fields ...Field) {
+	switch level {
+	case "info":
+		l.Info(fmt.Sprintf("%s: %s", prefix, msg), fields...)
+	case "error":
+		l.Error(fmt.Sprintf("%s: %s", prefix, msg), fields...)
+	case "debug":
+		l.Debug(fmt.Sprintf("%s: %s", prefix, msg), convertFields(fields)...)
+	case "warn":
+		l.Warn(fmt.Sprintf("%s: %s", prefix, msg), fields...)
+	}
+}
