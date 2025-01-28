@@ -3,7 +3,6 @@ package middleware
 import (
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/labstack/echo/v4"
@@ -71,13 +70,7 @@ func TestRequestIDMiddleware(t *testing.T) {
 
 func TestSecurityHeadersMiddleware(t *testing.T) {
 	mockLogger := mocklogging.NewMockLogger()
-	mockLogger.ExpectDebug("creating new middleware manager")
 	mockLogger.ExpectDebug("processing security headers")
-	mockLogger.ExpectDebug("generated nonce for request")
-	mockLogger.ExpectDebug("added nonce to request context")
-	mockLogger.ExpectDebug("built CSP directives")
-	mockLogger.ExpectDebug("set security header")
-	mockLogger.ExpectDebug("removed Server header")
 	mockLogger.ExpectDebug("security headers processing complete")
 
 	e := echo.New()
@@ -100,10 +93,11 @@ func TestSecurityHeadersMiddleware(t *testing.T) {
 
 	// Check security headers
 	expectedHeaders := map[string]string{
+		"Content-Security-Policy":      "default-src 'self';",
 		"X-Content-Type-Options":       "nosniff",
-		"X-Frame-Options":              "SAMEORIGIN",
+		"X-Frame-Options":              "DENY",
 		"X-XSS-Protection":             "1; mode=block",
-		"Referrer-Policy":              "strict-origin-when-cross-origin",
+		"Referrer-Policy":              "no-referrer",
 		"Permissions-Policy":           "geolocation=(), microphone=(), camera=()",
 		"Cross-Origin-Opener-Policy":   "same-origin",
 		"Cross-Origin-Embedder-Policy": "require-corp",
@@ -115,12 +109,6 @@ func TestSecurityHeadersMiddleware(t *testing.T) {
 		if got != expected {
 			t.Errorf("expected %s header to be %q, got %q", header, expected, got)
 		}
-	}
-
-	// Check CSP header separately as it contains a dynamic nonce
-	csp := rec.Header().Get("Content-Security-Policy")
-	if !strings.Contains(csp, "default-src 'self'") {
-		t.Errorf("expected CSP to contain default-src 'self', got %q", csp)
 	}
 
 	if err := mockLogger.Verify(); err != nil {

@@ -109,14 +109,32 @@ func TestLoggingMiddleware_RealIP(t *testing.T) {
 func TestLogging(t *testing.T) {
 	mockLogger := mocklogging.NewMockLogger()
 
-	// Set expectation without WithFields
-	mockLogger.ExpectInfo("http request")
+	// Set expectation for the logger
+	mockLogger.ExpectInfo("http request") // Ensure this matches the actual log message
 
-	// Call the function that uses the logger
-	// Example: middleware.HandleRequest(mockLogger)
+	// Create Echo instance
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
 
-	// Verify the expectations
+	// Create middleware
+	mw := middleware.LoggingMiddleware(mockLogger)
+
+	// Create test handler
+	handler := func(c echo.Context) error {
+		c.Response().WriteHeader(http.StatusOK)
+		return nil
+	}
+
+	// Execute middleware
+	err := mw(handler)(c)
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+
+	// Verify logger expectations
 	if err := mockLogger.Verify(); err != nil {
-		t.Fatalf("Verify failed: %v", err)
+		t.Fatalf("logger expectations not met: %v", err)
 	}
 }
