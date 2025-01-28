@@ -3,7 +3,7 @@ package utils
 import (
 	"github.com/labstack/echo/v4"
 
-	"github.com/jonesrussell/goforms/internal/infrastructure/logging"
+	"github.com/jonesrussell/goforms/internal/application/logging"
 	mocklogging "github.com/jonesrussell/goforms/test/mocks/logging"
 )
 
@@ -26,5 +26,6 @@ func NewTestSetup() *TestSetup {
 
 // Close performs any necessary cleanup
 func (ts *TestSetup) Close() error {
+	// Add any necessary cleanup logic here
 	return nil
 }

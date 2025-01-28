@@ -7,7 +7,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/jonesrussell/goforms/internal/infrastructure/logging"
+	"github.com/jonesrussell/goforms/internal/application/logging"
 )
 
 // Manager handles middleware configuration and setup
@@ -48,7 +48,7 @@ func (m *Manager) securityHeaders() echo.MiddlewareFunc {
 				m.logger.Error("failed to generate nonce",
 					logging.Error(err),
 				)
-				return err
+				return fmt.Errorf("failed to read random bytes: %w", err)
 			}
 			nonceStr := base64.StdEncoding.EncodeToString(nonce)
 			m.logger.Debug("generated nonce for request")
@@ -127,8 +127,7 @@ func (m *Manager) requestID() echo.MiddlewareFunc {
 
 func generateRequestID() string {
 	b := make([]byte, 16)
-	_, err := rand.Read(b)
-	if err != nil {
+	if _, err := rand.Read(b); err != nil {
 		return "error-generating-request-id"
 	}
 	return fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:])

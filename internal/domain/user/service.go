@@ -9,7 +9,8 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 
-	"github.com/jonesrussell/goforms/internal/infrastructure/logging"
+	"github.com/jonesrussell/goforms/internal/application/logging"
+	"github.com/jonesrussell/goforms/internal/domain/user/models"
 )
 
 var (
@@ -27,15 +28,15 @@ var (
 
 // Service defines the user service interface
 type Service interface {
-	SignUp(ctx context.Context, signup *Signup) (*User, error)
+	SignUp(ctx context.Context, signup *Signup) (*models.User, error)
 	Login(ctx context.Context, login *Login) (*TokenPair, error)
 	Logout(ctx context.Context, token string) error
 	RefreshToken(ctx context.Context, refreshToken string) (*TokenPair, error)
-	GetUserByID(ctx context.Context, id uint) (*User, error)
-	GetUserByEmail(ctx context.Context, email string) (*User, error)
-	UpdateUser(ctx context.Context, user *User) error
+	GetUserByID(ctx context.Context, id uint) (*models.User, error)
+	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
+	UpdateUser(ctx context.Context, user *models.User) error
 	DeleteUser(ctx context.Context, id uint) error
-	ListUsers(ctx context.Context) ([]User, error)
+	ListUsers(ctx context.Context) ([]models.User, error)
 	ValidateToken(token string) (*jwt.Token, error)
 	IsTokenBlacklisted(token string) bool
 }
@@ -57,7 +58,7 @@ func NewService(repository Repository, logger logging.Logger) Service {
 }
 
 // SignUp registers a new user
-func (s *ServiceImpl) SignUp(ctx context.Context, signup *Signup) (*User, error) {
+func (s *ServiceImpl) SignUp(ctx context.Context, signup *Signup) (*models.User, error) {
 	// Check if email already exists
 	existingUser, err := s.repository.GetByEmail(signup.Email)
 	if err != nil {
@@ -69,7 +70,7 @@ func (s *ServiceImpl) SignUp(ctx context.Context, signup *Signup) (*User, error)
 	}
 
 	// Create new user
-	user := &User{
+	user := &models.User{
 		Email:     signup.Email,
 		FirstName: signup.FirstName,
 		LastName:  signup.LastName,
@@ -190,7 +191,7 @@ func (s *ServiceImpl) IsTokenBlacklisted(token string) bool {
 }
 
 // generateTokenPair creates a new access and refresh token pair
-func (s *ServiceImpl) generateTokenPair(user *User) (*TokenPair, error) {
+func (s *ServiceImpl) generateTokenPair(user *models.User) (*TokenPair, error) {
 	// Generate access token
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id": user.ID,
@@ -225,7 +226,7 @@ func (s *ServiceImpl) generateTokenPair(user *User) (*TokenPair, error) {
 }
 
 // GetUserByID retrieves a user by ID
-func (s *ServiceImpl) GetUserByID(ctx context.Context, id uint) (*User, error) {
+func (s *ServiceImpl) GetUserByID(ctx context.Context, id uint) (*models.User, error) {
 	user, err := s.repository.GetByID(id)
 	if err != nil {
 		s.logger.Error("failed to get user", logging.Error(err))
@@ -235,7 +236,7 @@ func (s *ServiceImpl) GetUserByID(ctx context.Context, id uint) (*User, error) {
 }
 
 // GetUserByEmail retrieves a user by email
-func (s *ServiceImpl) GetUserByEmail(ctx context.Context, email string) (*User, error) {
+func (s *ServiceImpl) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
 	user, err := s.repository.GetByEmail(email)
 	if err != nil {
 		s.logger.Error("failed to get user", logging.Error(err))
@@ -245,7 +246,7 @@ func (s *ServiceImpl) GetUserByEmail(ctx context.Context, email string) (*User, 
 }
 
 // UpdateUser updates user information
-func (s *ServiceImpl) UpdateUser(ctx context.Context, user *User) error {
+func (s *ServiceImpl) UpdateUser(ctx context.Context, user *models.User) error {
 	if err := s.repository.Update(user); err != nil {
 		s.logger.Error("failed to update user", logging.Error(err))
 		return fmt.Errorf("failed to update user: %w", err)
@@ -263,7 +264,7 @@ func (s *ServiceImpl) DeleteUser(ctx context.Context, id uint) error {
 }
 
 // ListUsers returns all users
-func (s *ServiceImpl) ListUsers(ctx context.Context) ([]User, error) {
+func (s *ServiceImpl) ListUsers(ctx context.Context) ([]models.User, error) {
 	users, err := s.repository.List()
 	if err != nil {
 		s.logger.Error("failed to list users", logging.Error(err))

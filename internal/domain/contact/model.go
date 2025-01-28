@@ -1,7 +1,6 @@
 package contact
 
 import (
-	"context"
 	"errors"
 	"time"
 )
@@ -38,12 +37,4 @@ type Submission struct {
 	Status    Status    `json:"status" db:"status"`
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
-}
-
-// Store defines the interface for contact form persistence
-type Store interface {
-	Create(ctx context.Context, sub *Submission) error
-	List(ctx context.Context) ([]Submission, error)
-	Get(ctx context.Context, id int64) (*Submission, error)
-	UpdateStatus(ctx context.Context, id int64, status Status) error
 }

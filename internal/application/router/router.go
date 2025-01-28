@@ -5,13 +5,13 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/jonesrussell/goforms/internal/application/handler"
-	"github.com/jonesrussell/goforms/internal/infrastructure/logging"
+	"github.com/jonesrussell/goforms/internal/application/handlers"
+	"github.com/jonesrussell/goforms/internal/application/logging"
 )
 
 // Config holds router configuration
 type Config struct {
-	Handlers []handler.Handler
+	Handlers []handlers.Handler
 	Static   StaticConfig
 	Logger   logging.Logger
 }

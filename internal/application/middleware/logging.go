@@ -5,7 +5,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/jonesrussell/goforms/internal/infrastructure/logging"
+	"github.com/jonesrussell/goforms/internal/application/logging"
 )
 
 func LoggingMiddleware(log logging.Logger) echo.MiddlewareFunc {

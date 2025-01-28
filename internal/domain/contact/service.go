@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jonesrussell/goforms/internal/infrastructure/logging"
+	"github.com/jonesrussell/goforms/internal/application/logging"
 )
 
 // Ensure Service implements ContactService interface

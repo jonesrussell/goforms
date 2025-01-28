@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jonesrussell/goforms/internal/domain/user"
+	"github.com/jonesrussell/goforms/internal/domain/user/types"
 )
 
 func TestUser_SetPassword(t *testing.T) {
@@ -27,7 +27,7 @@ func TestUser_SetPassword(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			u := &user.User{}
+			u := &types.User{}
 			err := u.SetPassword(tt.password)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("User.SetPassword() error = %v, wantErr %v", err, tt.wantErr)
@@ -69,7 +69,7 @@ func TestUser_CheckPassword(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			u := &user.User{}
+			u := &types.User{}
 			_ = u.SetPassword(tt.password)
 			if got := u.CheckPassword(tt.checkAgainst); got != tt.want {
 				t.Errorf("User.CheckPassword() = %v, want %v", got, tt.want)
@@ -80,7 +80,7 @@ func TestUser_CheckPassword(t *testing.T) {
 
 func TestUser_Fields(t *testing.T) {
 	now := time.Now()
-	u := &user.User{
+	u := &types.User{
 		ID:        1,
 		Email:     "test@example.com",
 		FirstName: "John",

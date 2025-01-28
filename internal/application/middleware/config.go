@@ -3,8 +3,8 @@ package middleware
 import (
 	"github.com/labstack/echo/v4"
 
+	"github.com/jonesrussell/goforms/internal/application/logging"
 	"github.com/jonesrussell/goforms/internal/domain/user"
-	"github.com/jonesrussell/goforms/internal/infrastructure/logging"
 )
 
 // Config holds middleware configuration

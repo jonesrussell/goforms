@@ -3,9 +3,9 @@ package application
 import (
 	"github.com/labstack/echo/v4"
 
+	"github.com/jonesrussell/goforms/internal/application/logging"
 	"github.com/jonesrussell/goforms/internal/application/middleware"
 	"github.com/jonesrussell/goforms/internal/application/validator"
-	"github.com/jonesrussell/goforms/internal/infrastructure/logging"
 )
 
 // RegisterRoutes registers all API routes

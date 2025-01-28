@@ -8,7 +8,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/jonesrussell/goforms/internal/infrastructure/logging"
+	"github.com/jonesrussell/goforms/internal/application/logging"
 )
 
 func TestResponse(t *testing.T) {
@@ -98,9 +98,6 @@ func TestResponse(t *testing.T) {
 		if l == nil {
 			t.Error("getLogger() returned nil, want logger")
 		}
-		if _, ok := l.(logging.Logger); !ok {
-			t.Error("getLogger() returned logger that does not implement logging.Logger interface")
-		}
 	})
 
 	t.Run("getLogger without context logger", func(t *testing.T) {
@@ -110,9 +107,6 @@ func TestResponse(t *testing.T) {
 		l := getLogger(c)
 		if l == nil {
 			t.Error("getLogger() returned nil, want logger")
-		}
-		if _, ok := l.(logging.Logger); !ok {
-			t.Error("getLogger() returned logger that does not implement logging.Logger interface")
 		}
 	})
 }

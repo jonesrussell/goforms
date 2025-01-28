@@ -1,13 +1,14 @@
 package application
 
 import (
-	"github.com/jonesrussell/goforms/internal/domain/common/interfaces"
-	"github.com/jonesrussell/goforms/internal/infrastructure/validation"
+	"github.com/go-playground/validator/v10"
+
+	"github.com/jonesrussell/goforms/internal/application/validation"
 )
 
 // CustomValidator for request validation
 type CustomValidator struct {
-	validator interfaces.Validator
+	validator *validator.Validate
 }
 
 // Validate implements echo.Validator interface

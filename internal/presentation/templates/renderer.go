@@ -7,7 +7,7 @@ import (
 	"github.com/a-h/templ"
 	"github.com/labstack/echo/v4"
 
-	"github.com/jonesrussell/goforms/internal/infrastructure/logging"
+	"github.com/jonesrussell/goforms/internal/application/logging"
 )
 
 type Renderer struct {

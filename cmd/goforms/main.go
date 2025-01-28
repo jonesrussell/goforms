@@ -10,15 +10,14 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxevent"
 
-	"github.com/jonesrussell/goforms/internal/application/handler"
+	"github.com/jonesrussell/goforms/internal/application/config"
+	"github.com/jonesrussell/goforms/internal/application/handlers"
+	"github.com/jonesrussell/goforms/internal/application/logging"
 	"github.com/jonesrussell/goforms/internal/application/middleware"
 	"github.com/jonesrussell/goforms/internal/application/router"
 	"github.com/jonesrussell/goforms/internal/application/validator"
 	"github.com/jonesrussell/goforms/internal/domain"
 	"github.com/jonesrussell/goforms/internal/domain/user"
-	"github.com/jonesrussell/goforms/internal/infrastructure"
-	"github.com/jonesrussell/goforms/internal/infrastructure/config"
-	"github.com/jonesrussell/goforms/internal/infrastructure/logging"
 	"github.com/jonesrussell/goforms/internal/presentation/view"
 )
 
@@ -43,7 +42,7 @@ func run() error {
 	}
 
 	// Create version info
-	versionInfo := handler.VersionInfo{
+	versionInfo := handlers.VersionInfo{
 		Version:   version,
 		BuildTime: buildTime,
 		GitCommit: gitCommit,
@@ -54,12 +53,10 @@ func run() error {
 	app := fx.New(
 		// Version info first
 		fx.Provide(
-			func() handler.VersionInfo {
+			func() handlers.VersionInfo {
 				return versionInfo
 			},
 		),
-		// Core infrastructure next (config, logging, database)
-		infrastructure.Module,
 		// Domain services next
 		domain.Module,
 		// View module for rendering
@@ -75,14 +72,6 @@ func run() error {
 		// Add debug logging for dependency injection
 		fx.Invoke(func(log logging.Logger) {
 			log.Debug("checking module initialization")
-		}),
-		fx.Invoke(func(p infrastructure.HandlerParams) {
-			p.Logger.Debug("handler dependencies available",
-				logging.Bool("renderer_available", p.Renderer != nil),
-				logging.Bool("contact_service_available", p.ContactService != nil),
-				logging.Bool("subscription_service_available", p.SubscriptionService != nil),
-				logging.Bool("user_service_available", p.UserService != nil),
-			)
 		}),
 		// Start server last
 		fx.Invoke(startServer),
@@ -131,7 +120,7 @@ type ServerParams struct {
 	Echo     *echo.Echo
 	Config   *config.Config
 	Logger   logging.Logger
-	Handlers []handler.Handler `group:"handlers"`
+	Handlers []handlers.Handler `group:"handlers"`
 }
 
 func startServer(p ServerParams) error {
