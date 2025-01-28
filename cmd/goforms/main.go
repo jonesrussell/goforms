@@ -16,7 +16,6 @@ import (
 	"github.com/jonesrussell/goforms/internal/application/middleware"
 	"github.com/jonesrussell/goforms/internal/application/router"
 	"github.com/jonesrussell/goforms/internal/application/validator"
-	"github.com/jonesrussell/goforms/internal/domain"
 	"github.com/jonesrussell/goforms/internal/domain/user"
 	"github.com/jonesrussell/goforms/internal/presentation/view"
 )
@@ -53,7 +52,7 @@ func run() error {
 	app := fx.New(
 		logging.Module,
 		config.Module,
-		domain.Module,
+		//domain.Module,
 		database.Module,
 		user.Module,
 		// Provide the Echo instance
@@ -73,7 +72,7 @@ func run() error {
 			log.Debug("checking module initialization")
 		}),
 		// Start server last
-		fx.Invoke(startServer),
+		fx.Invoke(startServer), // Ensure the server is started
 	)
 
 	// Run app
