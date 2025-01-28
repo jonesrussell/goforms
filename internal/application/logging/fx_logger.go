@@ -22,7 +22,18 @@ func NewFxLogger(logger Logger) *FxLogger {
 
 // Log implements the Logger interface
 func (l *FxLogger) Log(level zapcore.Level, msg string, fields ...interface{}) {
-	l.SugaredLogger.With(fields...).Infow(msg) // Log with the appropriate level
+	switch level {
+	case zapcore.DebugLevel:
+		l.SugaredLogger.Debugw(msg, fields...)
+	case zapcore.InfoLevel:
+		l.SugaredLogger.Infow(msg, fields...)
+	case zapcore.WarnLevel:
+		l.SugaredLogger.Warnw(msg, fields...)
+	case zapcore.ErrorLevel:
+		l.SugaredLogger.Errorw(msg, fields...)
+	default:
+		l.SugaredLogger.Infow(msg, fields...) // Fallback to Info
+	}
 }
 
 // LogLevel returns the log level
