@@ -16,7 +16,7 @@ import (
 	"github.com/jonesrussell/goforms/internal/application/middleware"
 	"github.com/jonesrussell/goforms/internal/application/router"
 	"github.com/jonesrussell/goforms/internal/application/validator"
-	"github.com/jonesrussell/goforms/internal/domain/contact"
+	"github.com/jonesrussell/goforms/internal/domain"
 	"github.com/jonesrussell/goforms/internal/domain/user"
 	"github.com/jonesrussell/goforms/internal/presentation/view"
 )
@@ -54,9 +54,7 @@ func run() error {
 		logging.Module,
 		config.Module,
 		database.Module,
-		user.Module,
-		contact.Module,
-		// Provide the Echo instance
+		domain.Module, // Provide the Echo instance
 		fx.Provide(
 			newServer, // This will provide *echo.Echo
 		),
