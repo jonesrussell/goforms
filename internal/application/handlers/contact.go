@@ -8,6 +8,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/jonesrussell/goforms/internal/application/logging"
+	"github.com/jonesrussell/goforms/internal/domain/common"
 	"github.com/jonesrussell/goforms/internal/domain/contact"
 )
 
@@ -92,12 +93,12 @@ func (h *ContactHandler) Register(e *echo.Echo) {
 // @Tags contact
 // @Accept json
 // @Produce json
-// @Param submission body contact.Submission true "Contact form submission"
-// @Success 201 {object} contact.Submission
+// @Param submission body common.Submission true "Contact form submission"
+// @Success 201 {object} common.Submission
 // @Failure 400 {object} echo.HTTPError
 // @Router /api/v1/contact [post]
 func (h *ContactHandler) handleSubmit(c echo.Context) error {
-	var submission contact.Submission
+	var submission common.Submission
 	if err := c.Bind(&submission); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request format")
 	}
@@ -119,7 +120,7 @@ func (h *ContactHandler) handleSubmit(c echo.Context) error {
 // @Description Get a list of all contact form submissions
 // @Tags contact
 // @Produce json
-// @Success 200 {array} contact.Submission
+// @Success 200 {array} common.Submission
 // @Failure 500 {object} echo.HTTPError
 // @Router /api/v1/contact [get]
 func (h *ContactHandler) handleList(c echo.Context) error {
@@ -138,7 +139,7 @@ func (h *ContactHandler) handleList(c echo.Context) error {
 // @Tags contact
 // @Produce json
 // @Param id path int true "Submission ID"
-// @Success 200 {object} contact.Submission
+// @Success 200 {object} common.Submission
 // @Failure 400 {object} echo.HTTPError
 // @Failure 404 {object} echo.HTTPError
 // @Router /api/v1/contact/{id} [get]
@@ -168,26 +169,43 @@ func (h *ContactHandler) handleGet(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param id path int true "Submission ID"
-// @Param status body contact.Status true "New status"
-// @Success 200 {object} contact.Submission
+// @Param status body common.Status true "New status"
+// @Success 200 {object} common.Submission
 // @Failure 400 {object} echo.HTTPError
 // @Failure 404 {object} echo.HTTPError
 // @Router /api/v1/contact/{id} [put]
 func (h *ContactHandler) handleUpdate(c echo.Context) error {
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	idStr := c.Param("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid ID format")
 	}
 
-	var status contact.Status
+	var status common.Status
 	if err := c.Bind(&status); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid status format")
 	}
 
-	if err := h.contactService.UpdateSubmissionStatus(c.Request().Context(), id, status); err != nil {
+	if err := h.contactService.UpdateSubmissionStatus(c.Request().Context(), id, string(status)); err != nil {
 		h.LogError("failed to update submission status", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to update status")
 	}
 
 	return c.NoContent(http.StatusOK)
+}
+
+// UpdateStatus handles updating the status of a contact submission
+func (h *ContactHandler) UpdateStatus(c echo.Context) error {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid ID format")
+	}
+	status := c.QueryParam("status") // Assuming status is passed as a query parameter
+
+	// Ensure status is of type string
+	if err := h.contactService.UpdateSubmissionStatus(c.Request().Context(), id, status); err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to update status"})
+	}
+
+	return c.NoContent(http.StatusNoContent)
 }

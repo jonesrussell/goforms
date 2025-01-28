@@ -1,36 +1,34 @@
-package database
+package contact
 
 import (
 	"context"
 	"database/sql"
 	"errors"
-	"time"
-
-	"github.com/jmoiron/sqlx"
 
 	"github.com/jonesrussell/goforms/internal/application/logging"
-	"github.com/jonesrussell/goforms/internal/domain/contact"
+	"github.com/jonesrussell/goforms/internal/application/repositories/database"
+	"github.com/jonesrussell/goforms/internal/domain/common"
 )
 
-// ContactStore implements contact.Store
-type ContactStore struct {
-	db     *sqlx.DB
+// Repository implements the Store interface
+type Repository struct {
+	db     *database.DB
 	logger logging.Logger
 }
 
 // NewContactStore creates a new contact store
-func NewContactStore(db *DB, logger logging.Logger) contact.Store {
-	return &ContactStore{
-		db:     db.DB,
+func NewContactStore(db *database.DB, logger logging.Logger) Store {
+	return &Repository{
+		db:     db,
 		logger: logger,
 	}
 }
 
 // Create creates a new contact submission
-func (s *ContactStore) Create(ctx context.Context, sub *contact.Submission) error {
+func (s *Repository) Create(ctx context.Context, sub *common.Submission) error {
 	query := `
 		INSERT INTO contact_submissions (name, email, message, status, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?)
+		VALUES (?, ?, ?, ?, NOW(), NOW())
 	`
 
 	result, err := s.db.ExecContext(ctx, query,
@@ -38,10 +36,9 @@ func (s *ContactStore) Create(ctx context.Context, sub *contact.Submission) erro
 		sub.Email,
 		sub.Message,
 		sub.Status,
-		sub.CreatedAt,
-		sub.UpdatedAt,
 	)
 	if err != nil {
+		s.logger.Error("failed to create contact submission", logging.Error(err))
 		return err
 	}
 
@@ -55,8 +52,8 @@ func (s *ContactStore) Create(ctx context.Context, sub *contact.Submission) erro
 }
 
 // List returns all contact submissions
-func (s *ContactStore) List(ctx context.Context) ([]contact.Submission, error) {
-	var subs []contact.Submission
+func (s *Repository) List(ctx context.Context) ([]common.Submission, error) {
+	var subs []common.Submission
 	query := `
 		SELECT id, name, email, message, status, created_at, updated_at
 		FROM contact_submissions
@@ -64,6 +61,7 @@ func (s *ContactStore) List(ctx context.Context) ([]contact.Submission, error) {
 	`
 
 	if err := s.db.SelectContext(ctx, &subs, query); err != nil {
+		s.logger.Error("failed to list contact submissions", logging.Error(err))
 		return nil, err
 	}
 
@@ -71,8 +69,8 @@ func (s *ContactStore) List(ctx context.Context) ([]contact.Submission, error) {
 }
 
 // Get returns a contact submission by ID
-func (s *ContactStore) Get(ctx context.Context, id int64) (*contact.Submission, error) {
-	var sub contact.Submission
+func (s *Repository) Get(ctx context.Context, id int64) (*common.Submission, error) {
+	var sub common.Submission
 	query := `
 		SELECT id, name, email, message, status, created_at, updated_at
 		FROM contact_submissions
@@ -84,6 +82,7 @@ func (s *ContactStore) Get(ctx context.Context, id int64) (*contact.Submission, 
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
+		s.logger.Error("failed to get contact submission", logging.Error(err))
 		return nil, err
 	}
 
@@ -91,15 +90,16 @@ func (s *ContactStore) Get(ctx context.Context, id int64) (*contact.Submission, 
 }
 
 // UpdateStatus updates the status of a contact submission
-func (s *ContactStore) UpdateStatus(ctx context.Context, id int64, status contact.Status) error {
+func (s *Repository) UpdateStatus(ctx context.Context, id int64, status common.Status) error {
 	query := `
 		UPDATE contact_submissions
-		SET status = ?, updated_at = ?
+		SET status = ?, updated_at = NOW()
 		WHERE id = ?
 	`
 
-	result, err := s.db.ExecContext(ctx, query, status, time.Now(), id)
+	result, err := s.db.ExecContext(ctx, query, string(status), id)
 	if err != nil {
+		s.logger.Error("failed to update contact submission status", logging.Error(err))
 		return err
 	}
 

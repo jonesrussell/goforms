@@ -13,6 +13,9 @@ var Module = fx.Module("user",
 		NewStore,   // Provide the user repository
 		NewService, // Provide the user service
 	),
+	fx.Invoke(func(logger logging.Logger) {
+		logger.Debug("User module initialized")
+	}),
 )
 
 // NewStore creates a new user repository

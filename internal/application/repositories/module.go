@@ -5,7 +5,6 @@ import (
 
 	"github.com/jonesrussell/goforms/internal/application/logging"
 	"github.com/jonesrussell/goforms/internal/application/repositories/database"
-	"github.com/jonesrussell/goforms/internal/domain/contact"
 	"github.com/jonesrussell/goforms/internal/domain/user"
 )
 
@@ -19,10 +18,6 @@ var Module = fx.Module("repositories",
 
 	// Stores
 	fx.Provide(
-		fx.Annotate(
-			contact.NewStore,
-			fx.As(new(contact.Store)),
-		),
 		fx.Annotate(
 			user.NewStore,
 			fx.As(new(user.Store)),
