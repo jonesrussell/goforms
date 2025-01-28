@@ -59,7 +59,7 @@ type Stores struct {
 
 	ContactStore      contact.Store
 	SubscriptionStore subscription.Store
-	UserStore         user.Store
+	UserStore         user.Repository
 }
 
 // Module combines all infrastructure-level modules and providers.

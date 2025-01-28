@@ -7,7 +7,7 @@ import (
 )
 
 // NewUserStore creates a new user store
-func NewUserStore(db *database.Database, logger logging.Logger) user.Store {
+func NewUserStore(db *database.Database, logger logging.Logger) user.Repository {
 	return &Store{
 		db:  db.DB,
 		log: logger,

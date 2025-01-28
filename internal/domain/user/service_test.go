@@ -27,7 +27,7 @@ func TestSignUp(t *testing.T) {
 				LastName:  "Doe",
 			},
 			setupMock: func(s *mockstore.Store) {
-				s.CreateFunc = func(ctx context.Context, u *user.User) error {
+				s.CreateFunc = func(u *user.User) error {
 					return nil
 				}
 			},
@@ -42,10 +42,10 @@ func TestSignUp(t *testing.T) {
 				LastName:  "Doe",
 			},
 			setupMock: func(s *mockstore.Store) {
-				s.GetByEmailFunc = func(ctx context.Context, email string) (*user.User, error) {
+				s.GetByEmailFunc = func(email string) (*user.User, error) {
 					return &user.User{
 						ID:    1,
-						Email: "existing@example.com",
+						Email: email,
 					}, nil
 				}
 			},
@@ -60,7 +60,7 @@ func TestSignUp(t *testing.T) {
 				LastName:  "Doe",
 			},
 			setupMock: func(s *mockstore.Store) {
-				s.CreateFunc = func(ctx context.Context, u *user.User) error {
+				s.CreateFunc = func(u *user.User) error {
 					return errors.New("store error")
 				}
 			},
@@ -115,7 +115,7 @@ func TestLogin(t *testing.T) {
 					Role:  "user",
 				}
 				u.SetPassword("password123")
-				s.GetByEmailFunc = func(ctx context.Context, email string) (*user.User, error) {
+				s.GetByEmailFunc = func(email string) (*user.User, error) {
 					return u, nil
 				}
 			},
@@ -128,7 +128,7 @@ func TestLogin(t *testing.T) {
 				Password: "password123",
 			},
 			setupMock: func(s *mockstore.Store) {
-				s.GetByEmailFunc = func(ctx context.Context, email string) (*user.User, error) {
+				s.GetByEmailFunc = func(email string) (*user.User, error) {
 					return nil, errors.New("user not found")
 				}
 			},
@@ -200,7 +200,7 @@ func TestLogout(t *testing.T) {
 	if err := u.SetPassword("password123"); err != nil {
 		t.Fatalf("failed to set password: %v", err)
 	}
-	store.GetByEmailFunc = func(ctx context.Context, email string) (*user.User, error) {
+	store.GetByEmailFunc = func(email string) (*user.User, error) {
 		return u, nil
 	}
 

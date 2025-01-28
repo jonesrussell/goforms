@@ -19,6 +19,16 @@ type User struct {
 	UpdatedAt      time.Time `json:"updated_at" db:"updated_at"`
 }
 
+// Store defines the methods for user data access
+type Store interface {
+	Create(user *User) error
+	GetByID(id uint) (*User, error)
+	GetByEmail(email string) (*User, error)
+	Update(user *User) error
+	Delete(id uint) error
+	List() ([]User, error)
+}
+
 // Signup represents the user signup request
 type Signup struct {
 	Email     string `json:"email" validate:"required,email"`

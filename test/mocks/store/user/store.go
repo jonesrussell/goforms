@@ -11,7 +11,7 @@ type Store struct {
 	mu sync.RWMutex
 
 	// Function fields to customize mock behavior
-	CreateFunc     func(user *user.User) error
+	CreateFunc     func(u *user.User) error
 	GetByIDFunc    func(id uint) (*user.User, error)
 	GetByEmailFunc func(email string) (*user.User, error)
 	UpdateFunc     func(user *user.User) error
@@ -35,13 +35,13 @@ func NewStore() *Store {
 }
 
 // Create implements the Store interface
-func (m *Store) Create(user *user.User) error {
+func (m *Store) Create(u *user.User) error {
 	m.mu.Lock()
-	m.calls.Create = append(m.calls.Create, struct{ User *user.User }{User: user})
+	m.calls.Create = append(m.calls.Create, struct{ User *user.User }{User: u})
 	m.mu.Unlock()
 
 	if m.CreateFunc != nil {
-		return m.CreateFunc(user)
+		return m.CreateFunc(u)
 	}
 	return nil
 }
@@ -131,7 +131,7 @@ func (m *Store) GetByEmailCalls() []struct{ Email string } {
 func (m *Store) SetError(method string, err error) {
 	switch method {
 	case "create":
-		m.CreateFunc = func(user *user.User) error { return err }
+		m.CreateFunc = func(u *user.User) error { return err }
 	case "getByID":
 		m.GetByIDFunc = func(id uint) (*user.User, error) { return nil, err }
 	case "getByEmail":

@@ -11,25 +11,25 @@ import (
 	"github.com/jonesrussell/goforms/internal/infrastructure/persistence/database"
 )
 
-// Store implements user.Store interface
-type Store struct {
+// Repository implements user.Repository interface
+type Repository struct {
 	db     *database.DB
 	logger logging.Logger
 }
 
 // NewStore creates a new user store
-func NewStore(db *database.DB, logger logging.Logger) user.Store {
+func NewStore(db *database.DB, logger logging.Logger) user.Repository {
 	logger.Debug("creating user store",
 		logging.Bool("db_available", db != nil),
 	)
-	return &Store{
+	return &Repository{
 		db:     db,
 		logger: logger,
 	}
 }
 
 // Create stores a new user
-func (s *Store) Create(user *user.User) error {
+func (s *Repository) Create(user *user.User) error {
 	query := `
 		INSERT INTO users (email, hashed_password, created_at, updated_at)
 		VALUES (?, ?, NOW(), NOW())
@@ -79,7 +79,7 @@ func (s *Store) Create(user *user.User) error {
 }
 
 // GetByID returns a user by ID
-func (s *Store) GetByID(id uint) (*user.User, error) {
+func (s *Repository) GetByID(id uint) (*user.User, error) {
 	query := `
 		SELECT id, email, hashed_password, created_at, updated_at
 		FROM users
@@ -108,7 +108,7 @@ func (s *Store) GetByID(id uint) (*user.User, error) {
 }
 
 // GetByEmail returns a user by email
-func (s *Store) GetByEmail(email string) (*user.User, error) {
+func (s *Repository) GetByEmail(email string) (*user.User, error) {
 	query := `
 		SELECT id, email, hashed_password, created_at, updated_at
 		FROM users
@@ -137,7 +137,7 @@ func (s *Store) GetByEmail(email string) (*user.User, error) {
 }
 
 // Update updates user information
-func (s *Store) Update(user *user.User) error {
+func (s *Repository) Update(user *user.User) error {
 	query := `
 		UPDATE users
 		SET email = ?, hashed_password = ?, updated_at = NOW()
@@ -189,7 +189,7 @@ func (s *Store) Update(user *user.User) error {
 }
 
 // Delete removes a user
-func (s *Store) Delete(id uint) error {
+func (s *Repository) Delete(id uint) error {
 	query := `
 		DELETE FROM users
 		WHERE id = ?
@@ -233,7 +233,7 @@ func (s *Store) Delete(id uint) error {
 }
 
 // List returns all users
-func (s *Store) List() ([]user.User, error) {
+func (s *Repository) List() ([]user.User, error) {
 	query := `
 		SELECT id, email, hashed_password, created_at, updated_at
 		FROM users

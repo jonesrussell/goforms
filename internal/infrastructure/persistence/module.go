@@ -33,7 +33,7 @@ var Module = fx.Module("persistence",
 		),
 		fx.Annotate(
 			userstore.NewStore,
-			fx.As(new(user.Store)),
+			fx.As(new(user.Repository)),
 		),
 	),
 )

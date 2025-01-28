@@ -11,14 +11,14 @@ import (
 	"github.com/jonesrussell/goforms/internal/infrastructure/logging"
 )
 
-// Store implements the user.Store interface using a SQL database
+// Store implements the user.Repository interface using a SQL database
 type Store struct {
 	db  *sqlx.DB
 	log logging.Logger
 }
 
 // NewStore creates a new user store
-func NewStore(db *sqlx.DB, log logging.Logger) user.Store {
+func NewStore(db *sqlx.DB, log logging.Logger) user.Repository {
 	return &Store{
 		db:  db,
 		log: log,
