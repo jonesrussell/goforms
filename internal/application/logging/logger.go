@@ -5,7 +5,6 @@ import (
 	"time"
 
 	forbidden_zap "go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 // Logger defines the interface for logging operations
@@ -21,89 +20,27 @@ type Logger interface {
 	// Error logs a message at error level with optional fields
 	Error(msg string, fields ...Field)
 	// Debug logs a message at debug level with optional fields
-	Debug(msg string, fields ...Field)
+	Debug(msg string, fields ...interface{})
 	// Warn logs a message at warn level with optional fields
 	Warn(msg string, fields ...Field)
-	// Int64 adds an int64 field to the log entry
-	Int64(key string, value int64) Field
-	// Int adds an int field to the log entry
-	Int(key string, value int) Field
-	// Int32 adds an int32 field to the log entry
-	Int32(key string, value int32) Field
-	// Uint64 adds a uint64 field to the log entry
-	Uint64(key string, value uint64) Field
-	// Uint adds a uint field to the log entry
-	Uint(key string, value uint) Field
-	// Uint32 adds a uint32 field to the log entry
-	Uint32(key string, value uint32) Field
 }
 
-// Field represents a logging field
-type Field = forbidden_zap.Field
+// Field represents a logging field.
+type Field interface{}
 
-// String creates a string field
-func String(key string, value string) Field { return forbidden_zap.String(key, value) }
-
-// Int creates an integer field
-func Int(key string, value int) Field { return forbidden_zap.Int(key, value) }
-
-// Int64 creates a 64-bit integer field
-func Int64(key string, value int64) Field { return forbidden_zap.Int64(key, value) }
-
-// Uint creates an unsigned integer field
-func Uint(key string, value uint) Field { return forbidden_zap.Uint(key, value) }
-
-// Bool creates a boolean field
-func Bool(key string, value bool) Field { return forbidden_zap.Bool(key, value) }
-
-// Error creates an error field
-func Error(err error) Field { return forbidden_zap.Error(err) }
-
-// Duration creates a duration field
-func Duration(key string, value time.Duration) Field { return forbidden_zap.Duration(key, value) }
-
-// Any creates a field with any value
-func Any(key string, value interface{}) Field { return forbidden_zap.Any(key, value) }
-
-// logger implements the Logger interface using zap
+// logger implements the shared.Logger interface using zap
 type logger struct {
-	log *forbidden_zap.Logger
+	log *forbidden_zap.SugaredLogger
 }
 
 // NewLogger creates a new logger instance
-func NewLogger(debug bool, appName string) Logger {
-	// Create encoder config
-	encoderConfig := forbidden_zap.NewDevelopmentEncoderConfig()
-	encoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
-	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-	encoderConfig.EncodeDuration = zapcore.StringDurationEncoder
-	encoderConfig.EncodeCaller = zapcore.ShortCallerEncoder
-
-	var zapLog *forbidden_zap.Logger
-	if debug {
-		// Development mode with colored output
-		config := forbidden_zap.NewDevelopmentConfig()
-		config.EncoderConfig = encoderConfig
-		config.OutputPaths = []string{"stdout"}
-		config.Encoding = "console"
-
-		zapLog, _ = config.Build(
-			forbidden_zap.AddCaller(),
-			forbidden_zap.AddStacktrace(zapcore.ErrorLevel),
-			forbidden_zap.Fields(
-				forbidden_zap.String("app", appName),
-			),
-		)
-	} else {
-		// Production mode with JSON output
-		zapLog, _ = forbidden_zap.NewProduction(
-			forbidden_zap.Fields(
-				forbidden_zap.String("app", appName),
-			),
-		)
+func NewLogger() Logger {
+	zapLog, err := forbidden_zap.NewProduction()
+	if err != nil {
+		// Handle error appropriately, e.g., log it or panic
+		panic(err) // For simplicity, panic on error
 	}
-
-	return &logger{log: zapLog}
+	return &logger{log: zapLog.Sugar()}
 }
 
 // NewTestLogger creates a logger suitable for testing
@@ -111,40 +48,81 @@ func NewTestLogger() Logger {
 	config := forbidden_zap.NewDevelopmentConfig()
 	config.OutputPaths = []string{"stdout"}
 	zapLog, _ := config.Build()
-	return &logger{log: zapLog}
+	return &logger{log: zapLog.Sugar()}
 }
 
-func (l *logger) Info(msg string, fields ...Field)  { l.log.Info(msg, fields...) }
-func (l *logger) Error(msg string, fields ...Field) { l.log.Error(msg, fields...) }
-func (l *logger) Debug(msg string, fields ...Field) { l.log.Debug(msg, fields...) }
-func (l *logger) Warn(msg string, fields ...Field)  { l.log.Warn(msg, fields...) }
-
-// Int64 adds an int64 field to the log entry
-func (l *logger) Int64(key string, value int64) Field {
-	return forbidden_zap.Int64(key, value)
+// Info logs an info message
+func (l *logger) Info(msg string, fields ...Field) {
+	l.log.Infow(msg, convertFields(fields)...)
 }
 
-// Int adds an int field to the log entry
-func (l *logger) Int(key string, value int) Field {
-	return forbidden_zap.Int(key, value)
+// Error logs an error message
+func (l *logger) Error(msg string, fields ...Field) {
+	l.log.Errorw(msg, convertFields(fields)...)
 }
 
-// Int32 adds an int32 field to the log entry
-func (l *logger) Int32(key string, value int32) Field {
-	return forbidden_zap.Int32(key, value)
+// Debug logs a debug message
+func (l *logger) Debug(msg string, fields ...interface{}) {
+	l.log.Debugw(msg, fields...)
 }
 
-// Uint64 adds a uint64 field to the log entry
-func (l *logger) Uint64(key string, value uint64) Field {
-	return forbidden_zap.Uint64(key, value)
+// Warn logs a warning message
+func (l *logger) Warn(msg string, fields ...Field) {
+	l.log.Warnw(msg, convertFields(fields)...)
 }
 
-// Uint adds a uint field to the log entry
-func (l *logger) Uint(key string, value uint) Field {
+// convertFields converts custom fields to zap fields.
+func convertFields(fields []Field) []interface{} {
+	converted := make([]interface{}, len(fields))
+	for i, field := range fields {
+		converted[i] = field // Assuming Field is an interface{}
+	}
+	return converted
+}
+
+// String creates a string field
+func String(key string, value string) forbidden_zap.Field {
+	return forbidden_zap.String(key, value)
+}
+
+// Bool creates a boolean field
+func Bool(key string, value bool) forbidden_zap.Field {
+	return forbidden_zap.Bool(key, value)
+}
+
+// Error creates an error field
+func Error(value error) forbidden_zap.Field {
+	return forbidden_zap.Error(value)
+}
+
+// Uint creates an unsigned integer field
+func Uint(key string, value uint) forbidden_zap.Field {
 	return forbidden_zap.Uint(key, value)
 }
 
-// Uint32 adds a uint32 field to the log entry
-func (l *logger) Uint32(key string, value uint32) Field {
-	return forbidden_zap.Uint32(key, value)
+// Int creates an integer field
+func Int(key string, value int) forbidden_zap.Field {
+	return forbidden_zap.Int(key, value)
 }
+
+// Int64 creates an int64 field
+func Int64(key string, value int64) forbidden_zap.Field {
+	return forbidden_zap.Int64(key, value)
+}
+
+// Any creates an interface{} field
+func Any(key string, value interface{}) forbidden_zap.Field {
+	return forbidden_zap.Any(key, value)
+}
+
+// Duration creates a duration field
+func Duration(key string, value time.Duration) forbidden_zap.Field {
+	return forbidden_zap.Duration(key, value)
+}
+
+// FxEventLogger is a logger that integrates with fx
+type FxEventLogger struct {
+	Logger Logger
+}
+
+// Implement any methods you need for FxEventLogger

@@ -4,13 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sync"
-	"time"
-
-	"github.com/golang-jwt/jwt/v5"
 
 	"github.com/jonesrussell/goforms/internal/application/logging"
-	"github.com/jonesrussell/goforms/internal/domain/user/models"
 )
 
 var (
@@ -26,218 +21,46 @@ var (
 	ErrTokenBlacklisted = errors.New("token is blacklisted")
 )
 
-// Service defines the user service interface
+// Service defines the methods for user-related operations
 type Service interface {
-	SignUp(ctx context.Context, signup *Signup) (*models.User, error)
-	Login(ctx context.Context, login *Login) (*TokenPair, error)
-	Logout(ctx context.Context, token string) error
-	RefreshToken(ctx context.Context, refreshToken string) (*TokenPair, error)
-	GetUserByID(ctx context.Context, id uint) (*models.User, error)
-	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
-	UpdateUser(ctx context.Context, user *models.User) error
+	SignUp(ctx context.Context, user *User) error
+	GetUserByID(ctx context.Context, id uint) (*User, error)
+	UpdateUser(ctx context.Context, user *User) error
 	DeleteUser(ctx context.Context, id uint) error
-	ListUsers(ctx context.Context) ([]models.User, error)
-	ValidateToken(token string) (*jwt.Token, error)
-	IsTokenBlacklisted(token string) bool
+	ListUsers(ctx context.Context) ([]User, error)
 }
 
-// ServiceImpl implements the Service interface
-type ServiceImpl struct {
-	logger         logging.Logger
-	repository     Repository
-	jwtSecret      []byte
-	tokenBlacklist sync.Map
-}
-
-// NewService creates a new user service
-func NewService(repository Repository, logger logging.Logger) Service {
-	return &ServiceImpl{
-		repository: repository,
-		logger:     logger,
-	}
+// service implements the Service interface
+type service struct {
+	repo   UserRepository
+	logger logging.Logger
 }
 
 // SignUp registers a new user
-func (s *ServiceImpl) SignUp(ctx context.Context, signup *Signup) (*models.User, error) {
+func (s *service) SignUp(ctx context.Context, user *User) error {
 	// Check if email already exists
-	existingUser, err := s.repository.GetByEmail(signup.Email)
+	existingUser, err := s.repo.GetByEmail(user.Email)
 	if err != nil {
 		s.logger.Error("failed to check existing user", logging.Error(err))
-		return nil, fmt.Errorf("failed to create user: %w", err)
+		return fmt.Errorf("failed to create user: %w", err)
 	}
 	if existingUser != nil {
-		return nil, fmt.Errorf("failed to create user: %w", ErrEmailAlreadyExists)
-	}
-
-	// Create new user
-	user := &models.User{
-		Email:     signup.Email,
-		FirstName: signup.FirstName,
-		LastName:  signup.LastName,
-		Role:      "user",
-		Active:    true,
-	}
-
-	// Set password
-	if err := user.SetPassword(signup.Password); err != nil {
-		s.logger.Error("failed to set password", logging.Error(err))
-		return nil, fmt.Errorf("failed to create user: %w", err)
+		return fmt.Errorf("failed to create user: %w", ErrEmailAlreadyExists)
 	}
 
 	// Save user
-	err = s.repository.Create(user)
+	err = s.repo.Create(user)
 	if err != nil {
 		s.logger.Error("failed to create user", logging.Error(err))
-		return nil, fmt.Errorf("failed to create user: %w", err)
+		return fmt.Errorf("failed to create user: %w", err)
 	}
 
-	return user, nil
-}
-
-// Login authenticates a user and returns a token pair
-func (s *ServiceImpl) Login(ctx context.Context, login *Login) (*TokenPair, error) {
-	user, err := s.repository.GetByEmail(login.Email)
-	if err != nil {
-		s.logger.Error("failed to get user by email", logging.Error(err))
-		return nil, fmt.Errorf("failed to login: %w", err)
-	}
-	if user == nil || !user.CheckPassword(login.Password) {
-		return nil, fmt.Errorf("failed to login: %w", ErrInvalidCredentials)
-	}
-
-	tokens, err := s.generateTokenPair(user)
-	if err != nil {
-		s.logger.Error("failed to generate token pair", logging.Error(err))
-		return nil, fmt.Errorf("failed to login: %w", err)
-	}
-
-	return tokens, nil
-}
-
-// Logout blacklists the provided token
-func (s *ServiceImpl) Logout(ctx context.Context, token string) error {
-	_, err := s.ValidateToken(token)
-	if err != nil {
-		s.logger.Error("failed to validate token", logging.Error(err))
-		return fmt.Errorf("failed to logout: %w", ErrInvalidToken)
-	}
-
-	s.tokenBlacklist.Store(token, true)
 	return nil
 }
 
-// RefreshToken generates a new token pair using a refresh token
-func (s *ServiceImpl) RefreshToken(ctx context.Context, refreshToken string) (*TokenPair, error) {
-	// Validate refresh token
-	token, err := s.ValidateToken(refreshToken)
-	if err != nil {
-		return nil, fmt.Errorf("failed to refresh token: %w", ErrInvalidToken)
-	}
-
-	// Check if token is blacklisted
-	if s.IsTokenBlacklisted(refreshToken) {
-		return nil, fmt.Errorf("failed to refresh token: %w", ErrTokenBlacklisted)
-	}
-
-	// Extract claims
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
-		return nil, fmt.Errorf("failed to refresh token: %w", ErrInvalidToken)
-	}
-
-	// Get user from claims
-	userID := uint(claims["user_id"].(float64))
-	user, err := s.GetUserByID(ctx, userID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to refresh token: %w", err)
-	}
-
-	// Generate new token pair
-	tokenPair, err := s.generateTokenPair(user)
-	if err != nil {
-		return nil, fmt.Errorf("failed to refresh token: %w", err)
-	}
-
-	// Blacklist the old refresh token
-	s.tokenBlacklist.Store(refreshToken, true)
-
-	return tokenPair, nil
-}
-
-// ValidateToken validates a JWT token
-func (s *ServiceImpl) ValidateToken(tokenString string) (*jwt.Token, error) {
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-		return s.jwtSecret, nil
-	})
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to validate token: %w", err)
-	}
-
-	if !token.Valid {
-		return nil, fmt.Errorf("failed to validate token: %w", ErrInvalidToken)
-	}
-
-	return token, nil
-}
-
-// IsTokenBlacklisted checks if a token is blacklisted
-func (s *ServiceImpl) IsTokenBlacklisted(token string) bool {
-	_, blacklisted := s.tokenBlacklist.Load(token)
-	return blacklisted
-}
-
-// generateTokenPair creates a new access and refresh token pair
-func (s *ServiceImpl) generateTokenPair(user *models.User) (*TokenPair, error) {
-	// Generate access token
-	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id": user.ID,
-		"email":   user.Email,
-		"role":    user.Role,
-		"type":    "access",
-		"exp":     time.Now().Add(15 * time.Minute).Unix(),
-	})
-
-	// Generate refresh token with longer expiry
-	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id": user.ID,
-		"type":    "refresh",
-		"exp":     time.Now().Add(7 * 24 * time.Hour).Unix(),
-	})
-
-	// Sign tokens
-	accessTokenString, err := accessToken.SignedString(s.jwtSecret)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate token pair: %w", err)
-	}
-
-	refreshTokenString, err := refreshToken.SignedString(s.jwtSecret)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate token pair: %w", err)
-	}
-
-	return &TokenPair{
-		AccessToken:  accessTokenString,
-		RefreshToken: refreshTokenString,
-	}, nil
-}
-
 // GetUserByID retrieves a user by ID
-func (s *ServiceImpl) GetUserByID(ctx context.Context, id uint) (*models.User, error) {
-	user, err := s.repository.GetByID(id)
-	if err != nil {
-		s.logger.Error("failed to get user", logging.Error(err))
-		return nil, fmt.Errorf("failed to get user: %w", err)
-	}
-	return user, nil
-}
-
-// GetUserByEmail retrieves a user by email
-func (s *ServiceImpl) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
-	user, err := s.repository.GetByEmail(email)
+func (s *service) GetUserByID(ctx context.Context, id uint) (*User, error) {
+	user, err := s.repo.GetByID(id)
 	if err != nil {
 		s.logger.Error("failed to get user", logging.Error(err))
 		return nil, fmt.Errorf("failed to get user: %w", err)
@@ -246,8 +69,8 @@ func (s *ServiceImpl) GetUserByEmail(ctx context.Context, email string) (*models
 }
 
 // UpdateUser updates user information
-func (s *ServiceImpl) UpdateUser(ctx context.Context, user *models.User) error {
-	if err := s.repository.Update(user); err != nil {
+func (s *service) UpdateUser(ctx context.Context, user *User) error {
+	if err := s.repo.Update(user); err != nil {
 		s.logger.Error("failed to update user", logging.Error(err))
 		return fmt.Errorf("failed to update user: %w", err)
 	}
@@ -255,8 +78,8 @@ func (s *ServiceImpl) UpdateUser(ctx context.Context, user *models.User) error {
 }
 
 // DeleteUser removes a user
-func (s *ServiceImpl) DeleteUser(ctx context.Context, id uint) error {
-	if err := s.repository.Delete(id); err != nil {
+func (s *service) DeleteUser(ctx context.Context, id uint) error {
+	if err := s.repo.Delete(id); err != nil {
 		s.logger.Error("failed to delete user", logging.Error(err))
 		return fmt.Errorf("failed to delete user: %w", err)
 	}
@@ -264,8 +87,8 @@ func (s *ServiceImpl) DeleteUser(ctx context.Context, id uint) error {
 }
 
 // ListUsers returns all users
-func (s *ServiceImpl) ListUsers(ctx context.Context) ([]models.User, error) {
-	users, err := s.repository.List()
+func (s *service) ListUsers(ctx context.Context) ([]User, error) {
+	users, err := s.repo.List()
 	if err != nil {
 		s.logger.Error("failed to list users", logging.Error(err))
 		return nil, fmt.Errorf("failed to list users: %w", err)

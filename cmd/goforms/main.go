@@ -8,7 +8,6 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/fx"
-	"go.uber.org/fx/fxevent"
 
 	"github.com/jonesrussell/goforms/internal/application/config"
 	"github.com/jonesrussell/goforms/internal/application/handlers"
@@ -51,24 +50,21 @@ func run() error {
 
 	// Create app with DI
 	app := fx.New(
+		logging.Module,
+		config.Module,
+		domain.Module,
+		// Provide the Echo instance
+		fx.Provide(
+			newServer, // This will provide *echo.Echo
+		),
 		// Version info first
 		fx.Provide(
 			func() handlers.VersionInfo {
 				return versionInfo
 			},
 		),
-		// Domain services next
-		domain.Module,
 		// View module for rendering
 		view.Module,
-		// Local providers last
-		fx.Provide(
-			logging.NewFactory,
-			newServer,
-		),
-		fx.WithLogger(func(log logging.Logger) fxevent.Logger {
-			return &logging.FxEventLogger{Logger: log}
-		}),
 		// Add debug logging for dependency injection
 		fx.Invoke(func(log logging.Logger) {
 			log.Debug("checking module initialization")
@@ -92,7 +88,7 @@ func run() error {
 
 func newServer(cfg *config.Config, logFactory *logging.Factory, userService user.Service) (*echo.Echo, error) {
 	// Create logger
-	logger := logFactory.CreateFromConfig(cfg)
+	logger := logFactory.CreateFromConfig()
 
 	// Create Echo instance
 	e := echo.New()

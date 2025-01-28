@@ -1,8 +1,9 @@
 package middleware
 
 import (
-	"github.com/jonesrussell/goforms/internal/application/logging"
 	"github.com/labstack/echo/v4"
+
+	"github.com/jonesrussell/goforms/internal/application/logging"
 )
 
 // SecurityHeadersMiddleware adds security headers to all responses

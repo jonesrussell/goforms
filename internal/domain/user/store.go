@@ -8,38 +8,26 @@ import (
 
 	"github.com/jonesrussell/goforms/internal/application/logging"
 	"github.com/jonesrussell/goforms/internal/application/repositories/database"
-	"github.com/jonesrussell/goforms/internal/domain/user/models"
 )
 
 // Store defines the methods for user data access
 type Store interface {
-	Create(user *models.User) error
-	GetByID(id uint) (*models.User, error)
-	GetByEmail(email string) (*models.User, error)
-	Update(user *models.User) error
+	Create(user *User) error
+	GetByID(id uint) (*User, error)
+	GetByEmail(email string) (*User, error)
+	Update(user *User) error
 	Delete(id uint) error
-	List() ([]models.User, error)
+	List() ([]User, error)
 }
 
-// store implements the Store interface
+// store implements the UserRepository interface
 type store struct {
 	db     *database.DB
 	logger logging.Logger
 }
 
-// NewStore creates a new user store
-func NewStore(db *database.DB, logger logging.Logger) Store {
-	logger.Debug("creating user store",
-		logging.Bool("db_available", db != nil),
-	)
-	return &store{
-		db:     db,
-		logger: logger,
-	}
-}
-
 // Create stores a new user
-func (s *store) Create(user *models.User) error {
+func (s *store) Create(user *User) error {
 	query := `
 		INSERT INTO users (email, hashed_password, created_at, updated_at)
 		VALUES (?, ?, NOW(), NOW())
@@ -89,7 +77,7 @@ func (s *store) Create(user *models.User) error {
 }
 
 // GetByID retrieves a user by ID
-func (s *store) GetByID(id uint) (*models.User, error) {
+func (s *store) GetByID(id uint) (*User, error) {
 	query := `
 		SELECT id, email, hashed_password, created_at, updated_at
 		FROM users
@@ -100,7 +88,7 @@ func (s *store) GetByID(id uint) (*models.User, error) {
 		logging.Uint("id", id),
 	)
 
-	var u models.User
+	var u User
 	if err := s.db.Get(&u, query, id); err != nil {
 		s.logger.Error("failed to get user by ID",
 			logging.Error(err),
@@ -118,7 +106,7 @@ func (s *store) GetByID(id uint) (*models.User, error) {
 }
 
 // GetByEmail retrieves a user by email
-func (s *store) GetByEmail(email string) (*models.User, error) {
+func (s *store) GetByEmail(email string) (*User, error) {
 	query := `
 		SELECT id, email, hashed_password, created_at, updated_at
 		FROM users
@@ -129,7 +117,7 @@ func (s *store) GetByEmail(email string) (*models.User, error) {
 		logging.String("email", email),
 	)
 
-	var u models.User
+	var u User
 	if err := s.db.Get(&u, query, email); err != nil {
 		s.logger.Error("failed to get user by email",
 			logging.Error(err),
@@ -147,7 +135,7 @@ func (s *store) GetByEmail(email string) (*models.User, error) {
 }
 
 // Update modifies an existing user
-func (s *store) Update(user *models.User) error {
+func (s *store) Update(user *User) error {
 	query := `
 		UPDATE users
 		SET email = ?, hashed_password = ?, updated_at = NOW()
@@ -243,7 +231,7 @@ func (s *store) Delete(id uint) error {
 }
 
 // List retrieves all users
-func (s *store) List() ([]models.User, error) {
+func (s *store) List() ([]User, error) {
 	query := `
 		SELECT id, email, hashed_password, created_at, updated_at
 		FROM users
@@ -252,7 +240,7 @@ func (s *store) List() ([]models.User, error) {
 
 	s.logger.Debug("listing users")
 
-	var users []models.User
+	var users []User
 	if err := s.db.Select(&users, query); err != nil {
 		s.logger.Error("failed to list users",
 			logging.Error(err),

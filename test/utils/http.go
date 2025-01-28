@@ -12,8 +12,8 @@ import (
 // NewJSONRequest creates a new JSON request for testing
 func NewJSONRequest(method, path string, body interface{}) (*http.Request, error) {
 	var jsonBody []byte
-	var err error
 	if body != nil {
+		var err error
 		jsonBody, err = json.Marshal(body)
 		if err != nil {
 			return nil, err

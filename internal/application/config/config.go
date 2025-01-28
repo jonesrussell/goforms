@@ -1,12 +1,7 @@
 package config
 
 import (
-	"fmt"
-	"os"
 	"time"
-
-	"github.com/go-playground/validator/v10"
-	"github.com/kelseyhightower/envconfig"
 )
 
 // AppConfig holds application-level configuration
@@ -74,25 +69,4 @@ type RateLimitConfig struct {
 	Burst      int           `envconfig:"RATE_BURST" default:"5"`
 	TimeWindow time.Duration `envconfig:"RATE_LIMIT_TIME_WINDOW" default:"1m"`
 	PerIP      bool          `envconfig:"RATE_LIMIT_PER_IP" default:"true"`
-}
-
-// New creates a new Config with default values
-func New() (*Config, error) {
-	var cfg Config
-
-	// Simple debug output without logger dependency
-	if os.Getenv("APP_DEBUG") == "true" {
-		fmt.Printf("Loading configuration...\n")
-	}
-
-	if err := envconfig.Process("", &cfg); err != nil {
-		return nil, fmt.Errorf("failed to process config: %w", err)
-	}
-
-	validate := validator.New()
-	if err := validate.Struct(cfg); err != nil {
-		return nil, fmt.Errorf("config validation failed: %w", err)
-	}
-
-	return &cfg, nil
 }
