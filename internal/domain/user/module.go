@@ -11,20 +11,20 @@ import (
 // Module provides the user dependencies
 var Module = fx.Module("user",
 	fx.Provide(
-		NewStore,   // Provide the user repository
+		NewStore,   // Ensure this is using the correct type
 		NewService, // Provide the user service
 	),
 )
 
 // NewStore creates a new user repository
 func NewStore(db *database.DB, logger logging.Logger) UserRepository {
-	return &store{
+	return &store{ // Ensure you are returning an instance of store
 		db:     db,
 		logger: logger,
 	}
 }
 
 // NewService creates a new user service
-func NewService(repo UserRepository, logger logging.Logger) Service {
-	return &service{repo: repo, logger: logger}
+func NewService(repo UserRepository) Service {
+	return &service{repo: repo}
 }
