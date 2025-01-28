@@ -128,6 +128,10 @@ issues:
     - path: internal/.*/module\.go$
       linters:
         - gochecknoglobals
+    - path: internal/
+      linters:
+        - goimports
+      text: ".*mocks.*"  # Fail if any mock imports are found in internal/
   
   max-issues-per-linter: 50
   max-same-issues: 10

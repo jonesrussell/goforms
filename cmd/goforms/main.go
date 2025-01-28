@@ -13,6 +13,7 @@ import (
 	"github.com/jonesrussell/goforms/internal/application/handler"
 	"github.com/jonesrussell/goforms/internal/application/middleware"
 	"github.com/jonesrussell/goforms/internal/application/router"
+	"github.com/jonesrussell/goforms/internal/application/validator"
 	"github.com/jonesrussell/goforms/internal/domain"
 	"github.com/jonesrussell/goforms/internal/domain/user"
 	"github.com/jonesrussell/goforms/internal/infrastructure"
@@ -108,6 +109,9 @@ func newServer(cfg *config.Config, logFactory *logging.Factory, userService user
 	e := echo.New()
 	e.HideBanner = true
 	e.HidePort = true
+
+	// Register validator
+	e.Validator = validator.NewValidator()
 
 	// Configure middleware
 	middleware.Setup(e, &middleware.Config{

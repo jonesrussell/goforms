@@ -1,4 +1,4 @@
-package logging
+package mocklogging
 
 import (
 	"fmt"
@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/jonesrussell/goforms/internal/infrastructure/logging"
+	"github.com/stretchr/testify/mock"
 )
 
 // AnyValue is a placeholder for any field value
@@ -23,6 +24,7 @@ type logCall struct {
 
 // MockLogger is a mock implementation of logging.Logger
 type MockLogger struct {
+	mock.Mock
 	mu       sync.Mutex
 	calls    []logCall
 	expected []logCall
@@ -48,19 +50,19 @@ func (m *MockLogger) recordCall(level, message string, fields ...logging.Field) 
 }
 
 func (m *MockLogger) Info(message string, fields ...logging.Field) {
-	m.recordCall("info", message, fields...)
+	m.Called(message, fields)
 }
 
 func (m *MockLogger) Error(message string, fields ...logging.Field) {
-	m.recordCall("error", message, fields...)
+	m.Called(message, fields)
 }
 
 func (m *MockLogger) Debug(message string, fields ...logging.Field) {
-	m.recordCall("debug", message, fields...)
+	m.Called(message, fields)
 }
 
 func (m *MockLogger) Warn(message string, fields ...logging.Field) {
-	m.recordCall("warn", message, fields...)
+	m.Called(message, fields)
 }
 
 // Field creation methods

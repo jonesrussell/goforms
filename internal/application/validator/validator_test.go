@@ -12,6 +12,13 @@ type TestStruct struct {
 	Age   int    `validate:"gte=0,lte=130"`
 }
 
+type TestSignup struct {
+	Email     string `validate:"required,email"`
+	Password  string `validate:"required,min=8"`
+	FirstName string `validate:"required"`
+	LastName  string `validate:"required"`
+}
+
 func TestNewValidator(t *testing.T) {
 	v := NewValidator()
 	if v == nil {
@@ -99,6 +106,83 @@ func TestValidate(t *testing.T) {
 			t.Error("Validate() error = nil, want error")
 		}
 	})
+}
+
+func TestValidator(t *testing.T) {
+	v := NewValidator()
+
+	tests := []struct {
+		name    string
+		input   TestSignup
+		wantErr bool
+	}{
+		{
+			name: "valid signup",
+			input: TestSignup{
+				Email:     "test@example.com",
+				Password:  "password123",
+				FirstName: "Test",
+				LastName:  "User",
+			},
+			wantErr: false,
+		},
+		{
+			name: "missing email",
+			input: TestSignup{
+				Password:  "password123",
+				FirstName: "Test",
+				LastName:  "User",
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid email",
+			input: TestSignup{
+				Email:     "notanemail",
+				Password:  "password123",
+				FirstName: "Test",
+				LastName:  "User",
+			},
+			wantErr: true,
+		},
+		{
+			name: "missing first name",
+			input: TestSignup{
+				Email:    "test@example.com",
+				Password: "password123",
+				LastName: "User",
+			},
+			wantErr: true,
+		},
+		{
+			name: "missing last name",
+			input: TestSignup{
+				Email:     "test@example.com",
+				Password:  "password123",
+				FirstName: "Test",
+			},
+			wantErr: true,
+		},
+		{
+			name: "password too short",
+			input: TestSignup{
+				Email:     "test@example.com",
+				Password:  "short",
+				FirstName: "Test",
+				LastName:  "User",
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := v.Validate(tt.input)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Validate() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
 }
 
 func containsTag(tag, substr string) bool {

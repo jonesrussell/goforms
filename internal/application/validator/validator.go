@@ -1,7 +1,10 @@
 package validator
 
 import (
+	"fmt"
+
 	"github.com/go-playground/validator/v10"
+	"github.com/labstack/echo/v4"
 )
 
 // CustomValidator wraps the validator.Validate instance
@@ -18,8 +21,11 @@ func NewValidator() *CustomValidator {
 
 // Validate validates the provided struct using the validator instance
 func (cv *CustomValidator) Validate(i interface{}) error {
-	if err := cv.validator.Struct(i); err != nil {
-		return err
+	if cv.validator == nil {
+		return fmt.Errorf("validator not initialized")
 	}
-	return nil
+	return cv.validator.Struct(i)
 }
+
+// Ensure CustomValidator implements echo.Validator at compile time
+var _ echo.Validator = &CustomValidator{}

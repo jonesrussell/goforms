@@ -4,6 +4,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/jonesrussell/goforms/internal/application/middleware"
+	"github.com/jonesrussell/goforms/internal/application/validator"
 	"github.com/jonesrussell/goforms/internal/infrastructure/logging"
 )
 
@@ -20,6 +21,25 @@ func NewEcho(log logging.Logger) *echo.Echo {
 	e := echo.New()
 	e.HideBanner = true
 	e.HidePort = true
+
+	// Register validator
+	log.Debug("creating validator instance")
+	v := validator.NewValidator()
+	if v == nil {
+		log.Error("validator instance is nil")
+		panic("validator instance is nil")
+	}
+	log.Debug("validator instance created")
+
+	// Test validate a simple struct
+	type test struct {
+		Field string `validate:"required"`
+	}
+	err := v.Validate(test{})
+	log.Debug("validator test", logging.Error(err))
+
+	e.Validator = v
+	log.Debug("validator registered with echo")
 
 	// Setup middleware
 	mw := middleware.New(log)
