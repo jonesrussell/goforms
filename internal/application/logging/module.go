@@ -12,8 +12,9 @@ import (
 // Module provides the logging dependencies
 var Module = fx.Module("logging",
 	fx.Provide(
-		NewLogger,  // Provide the logger based on the environment
-		NewFactory, // Provide the logger factory
+		NewLogger,   // Provide the logger based on the environment
+		NewFactory,  // Provide the logger factory
+		NewFxLogger, // Provide the fx logger
 	),
 )
 
