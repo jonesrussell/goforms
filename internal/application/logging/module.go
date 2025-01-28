@@ -6,6 +6,7 @@ import (
 	"github.com/jonesrussell/goforms/internal/application/loggingconfig"
 	"go.uber.org/fx"
 	forbidden_zap "go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 // Module provides the logging dependencies
@@ -25,7 +26,8 @@ func NewLogger(cfg loggingconfig.LoggerConfig) Logger {
 	// Check if the environment is development
 	if cfg.GetEnv() == "development" {
 		zapConfig := forbidden_zap.NewDevelopmentConfig()
-		zapLog, err = zapConfig.Build() // Build the development logger
+		zapConfig.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder // Enable colorized output
+		zapLog, err = zapConfig.Build()                                        // Build the development logger
 		if err != nil {
 			panic(fmt.Errorf("failed to create development logger: %w", err)) // Log error before panicking
 		}
