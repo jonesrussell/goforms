@@ -27,6 +27,10 @@ func NewStore(db *database.DB, logger logging.Logger) Repository {
 }
 
 // NewService creates a new user service
-func NewService(repo Repository) Service {
-	return &service{repo: repo}
+func NewService(repo Repository, tokenRepo TokenRepository, logger logging.Logger) *service {
+	return &service{
+		repo:      repo,
+		tokenRepo: tokenRepo,
+		logger:    logger,
+	}
 }

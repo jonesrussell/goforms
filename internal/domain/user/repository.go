@@ -1,6 +1,8 @@
 package user
 
 import (
+	"context"
+
 	"github.com/jonesrussell/goforms/internal/application/logging"
 	"github.com/jonesrussell/goforms/internal/application/repositories/database"
 )
@@ -13,6 +15,15 @@ type Repository interface {
 	List() ([]User, error)
 	Update(user *User) error
 	Delete(id uint) error
+}
+
+// TokenRepository defines the methods for token-related operations
+type TokenRepository interface {
+	IsTokenBlacklisted(token string) bool
+	BlacklistToken(token string) error
+	ValidateToken(token string) (string, error)
+	Login(ctx context.Context, login *Login) (*TokenPair, error)
+	Logout(ctx context.Context, token string) error
 }
 
 // userRepository implements the Repository interface.
