@@ -37,32 +37,18 @@ func logAndWrapError(logger logging.Logger, msg string, err error) error {
 	return fmt.Errorf("%s: %w", msg, err)
 }
 
-func (s *Service) SignUp(ctx context.Context, signup *Signup) (*User, error) {
-	existingUser, err := s.repo.GetByEmail(signup.Email)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create user: %w", err)
-	}
-	if existingUser != nil {
-		return nil, fmt.Errorf("failed to create user: %w", ErrEmailAlreadyExists)
-	}
-
+func (s *Service) SignUp(email, password, firstName string) (*User, error) {
 	user := &User{
-		Email:     signup.Email,
-		FirstName: signup.FirstName,
-		LastName:  signup.LastName,
-		Role:      "user",
-		Active:    true,
+		Email:          email,
+		FirstName:      firstName,
+		HashedPassword: password, // Ensure you are storing the password correctly
 	}
 
-	if err := user.SetPassword(signup.Password); err != nil {
-		return nil, fmt.Errorf("failed to create user: %w", err)
+	err := s.repo.Create(user)
+	if err != nil {
+		return nil, err // Return the error if creation fails
 	}
-
-	if err := s.repo.Create(user); err != nil {
-		return nil, fmt.Errorf("failed to create user: %w", err)
-	}
-
-	return user, nil
+	return user, nil // Return the created user and nil error
 }
 
 func (s *Service) GetUserByID(ctx context.Context, id uint) (*User, error) {

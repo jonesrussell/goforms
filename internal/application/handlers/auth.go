@@ -53,15 +53,20 @@ func (h *AuthHandler) Register(e *echo.Echo) {
 
 // handleSignup handles user registration
 func (h *AuthHandler) handleSignup(c echo.Context) error {
-	var signup user.Signup
-	if err := c.Bind(&signup); err != nil {
+	var signupRequest struct {
+		Email     string `json:"email"`
+		Password  string `json:"password"`
+		FirstName string `json:"first_name"`
+	}
+
+	if err := c.Bind(&signupRequest); err != nil {
 		h.Logger.Error("Failed to bind signup data", logging.Error(err))
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": "Invalid input"})
 	}
 
-	h.Logger.Debug("Received signup data", logging.Any("signup", signup))
+	h.Logger.Debug("Received signup data", logging.Any("signup", signupRequest))
 
-	existingUser, err := h.UserService.GetByEmail(signup.Email)
+	existingUser, err := h.UserService.GetByEmail(signupRequest.Email)
 	if err != nil {
 		h.Logger.Error("Failed to check existing user", logging.Error(err))
 		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "Internal server error"})
@@ -71,7 +76,7 @@ func (h *AuthHandler) handleSignup(c echo.Context) error {
 		return c.JSON(http.StatusConflict, map[string]string{"message": "Email already in use"})
 	}
 
-	createdUser, err := h.UserService.SignUp(c.Request().Context(), &signup)
+	createdUser, err := h.UserService.SignUp(signupRequest.Email, signupRequest.Password, signupRequest.FirstName)
 	if err != nil {
 		h.Logger.Error("Failed to sign up user", logging.Error(err))
 		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "Failed to create user"})
