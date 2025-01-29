@@ -28,6 +28,8 @@ type Logger interface {
 	WithPrefix(prefix string) Logger
 	// LogWithPrefix logs a message with a specified prefix
 	LogWithPrefix(level string, prefix, msg string, fields ...Field)
+	// Log logs a message
+	Log(message string)
 }
 
 // Field represents a logging field.
@@ -141,4 +143,9 @@ func (l *logger) LogWithPrefix(level string, prefix, msg string, fields ...Field
 	case "warn":
 		l.Warn(fmt.Sprintf("%s: %s", prefix, msg), fields...)
 	}
+}
+
+// Log logs a message
+func (l *logger) Log(message string) {
+	l.log.Info(message) // or use the appropriate log level
 }

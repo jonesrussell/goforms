@@ -14,6 +14,11 @@ type MockLogger struct {
 	WarnFunc  func(msg string, fields ...logging.Field)
 }
 
+// Log implements logging.Logger.
+func (m *MockLogger) Log(message string) {
+	panic("unimplemented")
+}
+
 func (m *MockLogger) Info(msg string, fields ...logging.Field) {
 	if m.InfoFunc != nil {
 		m.InfoFunc(msg, fields...)
