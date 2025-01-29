@@ -28,7 +28,7 @@ templ SignupForm() {
                 <label for="password" class="form-label">
                     Password
                 </label>
-                <input id="password" name="password" type="password" required class="form-input"/>
+                <input id="password" name="password" type="password" required class="form-input" autocomplete="current-password"/>
             </div>
 
             <button type="submit" class="btn btn-primary">
@@ -40,4 +40,6 @@ templ SignupForm() {
             </div>
         </form>
     </section>
+
+    <script src="/static/js/signup.js"></script>
 } 

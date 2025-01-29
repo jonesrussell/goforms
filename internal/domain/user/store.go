@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
@@ -28,50 +29,13 @@ type store struct {
 
 // Create stores a new user
 func (s *store) Create(user *User) error {
-	query := `
-		INSERT INTO users (email, hashed_password, created_at, updated_at)
-		VALUES (?, ?, NOW(), NOW())
-	`
+	s.logger.Debug("Creating user", logging.String("email", user.Email))
 
-	s.logger.Debug("creating user",
-		logging.String("email", user.Email),
-	)
-
-	err := s.db.WithTx(context.Background(), func(tx *sqlx.Tx) error {
-		result, err := tx.Exec(query,
-			user.Email,
-			user.HashedPassword,
-		)
-		if err != nil {
-			return fmt.Errorf("failed to insert user: %w", err)
-		}
-
-		id, err := result.LastInsertId()
-		if err != nil {
-			return fmt.Errorf("failed to get last insert ID: %w", err)
-		}
-
-		// Check for integer overflow
-		if id < 0 {
-			return fmt.Errorf("user ID %d is out of valid range", id)
-		}
-
-		user.ID = uint(id)
-		return nil
-	})
-
+	_, err := s.db.Exec("INSERT INTO users (email, hashed_password) VALUES (?, ?)", user.Email, user.HashedPassword)
 	if err != nil {
-		s.logger.Error("failed to create user",
-			logging.Error(err),
-			logging.String("email", user.Email),
-		)
-		return fmt.Errorf("failed to create user: %w", err)
+		s.logger.Error("Failed to create user", logging.Error(err))
+		return err
 	}
-
-	s.logger.Info("user created",
-		logging.Uint("id", user.ID),
-		logging.String("email", user.Email),
-	)
 
 	return nil
 }
@@ -107,31 +71,24 @@ func (s *store) Get(id uint) (*User, error) {
 
 // GetByEmail retrieves a user by email
 func (s *store) GetByEmail(email string) (*User, error) {
-	query := `
-		SELECT id, email, hashed_password, created_at, updated_at
-		FROM users
-		WHERE email = ?
-	`
+	s.logger.Debug("Getting user by email", logging.String("email", email))
 
-	s.logger.Debug("getting user by email",
-		logging.String("email", email),
-	)
-
-	var u User
-	if err := s.db.Get(&u, query, email); err != nil {
-		s.logger.Error("failed to get user by email",
-			logging.Error(err),
-			logging.String("email", email),
-		)
+	var user User
+	err := s.db.Get(&user, "SELECT * FROM users WHERE email = ?", email)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil // User not found, return nil
+		}
+		s.logger.Error("Failed to get user by email", logging.Error(err))
 		return nil, fmt.Errorf("failed to get user by email: %w", err)
 	}
 
 	s.logger.Debug("user retrieved",
-		logging.Uint("id", u.ID),
-		logging.String("email", u.Email),
+		logging.Uint("id", user.ID),
+		logging.String("email", user.Email),
 	)
 
-	return &u, nil
+	return &user, nil
 }
 
 // Update modifies an existing user

@@ -55,24 +55,29 @@ func (h *AuthHandler) Register(e *echo.Echo) {
 func (h *AuthHandler) handleSignup(c echo.Context) error {
 	var signup user.Signup
 	if err := c.Bind(&signup); err != nil {
-		h.Logger.LogWithPrefix("error", "auth", "failed to bind request", logging.Error(err))
-		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request format")
+		h.Logger.Error("Failed to bind signup data", logging.Error(err))
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": "Invalid input"})
 	}
 
-	if err := c.Validate(signup); err != nil {
-		h.Logger.LogWithPrefix("error", "auth", "validation failed", logging.Error(err))
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
-	}
+	h.Logger.Debug("Received signup data", logging.Any("signup", signup))
 
-	newUser := user.ConvertSignupToUser(&signup)
-	newUser, err := h.userService.SignUp(c.Request().Context(), newUser)
+	existingUser, err := h.userService.GetByEmail(signup.Email)
 	if err != nil {
-		h.Logger.LogWithPrefix("error", "auth", "failed to create user", logging.Error(err))
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		h.Logger.Error("Failed to check existing user", logging.Error(err))
+		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "Internal server error"})
 	}
 
-	h.Logger.LogWithPrefix("info", "auth", "User created successfully", logging.String("email", signup.Email))
-	return c.JSON(http.StatusCreated, newUser)
+	if existingUser != nil {
+		return c.JSON(http.StatusConflict, map[string]string{"message": "Email already in use"})
+	}
+
+	createdUser, err := h.userService.SignUp(c.Request().Context(), &signup)
+	if err != nil {
+		h.Logger.Error("Failed to sign up user", logging.Error(err))
+		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "Failed to create user"})
+	}
+
+	return c.JSON(http.StatusCreated, createdUser)
 }
 
 // handleLogin handles user authentication

@@ -23,11 +23,12 @@ var (
 
 // Service defines the methods for user-related operations
 type Service interface {
-	SignUp(ctx context.Context, user *User) (*User, error)
+	SignUp(ctx context.Context, signup *Signup) (*User, error)
 	GetUserByID(ctx context.Context, id uint) (*User, error)
 	UpdateUser(ctx context.Context, user *User) error
 	DeleteUser(ctx context.Context, id uint) error
 	ListUsers(ctx context.Context) ([]User, error)
+	GetByEmail(email string) (*User, error)
 	IsTokenBlacklisted(token string) bool
 	ValidateToken(token string) (string, error)
 	Login(ctx context.Context, login *Login) (*TokenPair, error)
@@ -41,9 +42,9 @@ type service struct {
 }
 
 // SignUp registers a new user and returns the created user
-func (s *service) SignUp(ctx context.Context, user *User) (*User, error) {
+func (s *service) SignUp(ctx context.Context, signup *Signup) (*User, error) {
 	// Check if email already exists
-	existingUser, err := s.repo.GetByEmail(user.Email)
+	existingUser, err := s.repo.GetByEmail(signup.Email)
 	if err != nil {
 		s.logger.Error("failed to check existing user", logging.Error(err))
 		return nil, fmt.Errorf("failed to create user: %w", err)
@@ -52,14 +53,29 @@ func (s *service) SignUp(ctx context.Context, user *User) (*User, error) {
 		return nil, fmt.Errorf("failed to create user: %w", ErrEmailAlreadyExists)
 	}
 
+	// Create a new User instance
+	user := &User{
+		Email:     signup.Email,
+		FirstName: signup.FirstName,
+		LastName:  signup.LastName,
+		Role:      "user", // Set a default role or modify as needed
+		Active:    true,   // Set default active status
+	}
+
+	// Hash the password
+	if err := user.SetPassword(signup.Password); err != nil {
+		s.logger.Error("failed to set password", logging.Error(err))
+		return nil, fmt.Errorf("failed to create user: %w", err)
+	}
+
 	// Save user
-	err = s.repo.Create(user)
+	err = s.repo.Create(user) // Pass the User instance to the repository
 	if err != nil {
 		s.logger.Error("failed to create user", logging.Error(err))
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
 
-	return user, nil // Return the created user and nil error
+	return user, nil // Return the created User instance
 }
 
 // GetUserByID retrieves a user by ID
@@ -126,4 +142,9 @@ func (s *service) Logout(ctx context.Context, token string) error {
 	// Implement your logic to invalidate the token
 	// For example, mark the token as blacklisted in the database
 	return nil // Placeholder return value
+}
+
+// Implement the GetByEmail method
+func (s *service) GetByEmail(email string) (*User, error) {
+	return s.repo.GetByEmail(email) // Assuming repo is your data access layer
 }
