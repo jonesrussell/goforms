@@ -3,10 +3,11 @@ package logging
 import (
 	"fmt"
 
-	"github.com/jonesrussell/goforms/internal/application/loggingconfig"
 	"go.uber.org/fx"
 	forbidden_zap "go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+
+	"github.com/jonesrussell/goforms/internal/application/loggingconfig"
 )
 
 // Module provides the logging dependencies

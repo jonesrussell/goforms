@@ -12,7 +12,7 @@ import (
 var Module = fx.Module("database",
 	fx.Provide(
 		func(lc fx.Lifecycle, cfg *config.Config, logger logging.Logger) (*database.DB, error) {
-			return database.NewDB(lc, cfg, logger) // Use the NewDB from connection.go
+			return database.NewDB(lc, cfg, logger) // Ensure this is the only connection method used
 		},
 	),
 )

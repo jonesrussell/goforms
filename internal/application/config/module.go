@@ -6,8 +6,9 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/jonesrussell/goforms/internal/application/loggingconfig"
 	"github.com/kelseyhightower/envconfig"
+
+	"github.com/jonesrussell/goforms/internal/application/loggingconfig"
 )
 
 // Module provides the configuration dependencies

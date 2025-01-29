@@ -5,6 +5,7 @@ import (
 
 	"github.com/jonesrussell/goforms/internal/application/handlers"
 	"github.com/jonesrussell/goforms/internal/application/logging"
+	"github.com/jonesrussell/goforms/internal/application/repositories/database"
 	"github.com/jonesrussell/goforms/internal/domain/contact"
 	"github.com/jonesrussell/goforms/internal/domain/user"
 	"github.com/jonesrussell/goforms/internal/presentation/view"
@@ -25,9 +26,18 @@ var Module = fx.Options(
 			)
 		}),
 		// Add other handlers as needed
-		AsHandler(func(logger logging.Logger, userService user.Service) *handlers.AuthHandler {
+		AsHandler(func(logger logging.Logger, userService *user.Service) *handlers.AuthHandler {
 			return handlers.NewAuthHandler(logger, userService)
 		}),
+		user.NewInMemoryTokenRepository,
+		func(repo user.Repository, tokenRepo user.TokenRepository, logger logging.Logger) *user.Service {
+			return user.NewService(repo, tokenRepo, logger)
+		},
+		fx.Provide(
+			func(db *database.DB) user.TokenRepository {
+				return user.NewTokenRepository(db)
+			},
+		),
 	),
 )
 

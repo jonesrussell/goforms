@@ -69,7 +69,7 @@ func run() error {
 		),
 		// Provide the AuthHandler with logger and userService directly
 		fx.Provide(
-			func(logger logging.Logger, userService user.Service) *handlers.AuthHandler {
+			func(logger logging.Logger, userService *user.Service) *handlers.AuthHandler {
 				return handlers.NewAuthHandler(logger, userService)
 			},
 		),
@@ -102,7 +102,7 @@ func run() error {
 	return nil
 }
 
-func newServer(cfg *config.Config, logFactory *logging.Factory, userService user.Service) (*echo.Echo, error) {
+func newServer(cfg *config.Config, logFactory *logging.Factory, userService *user.Service) (*echo.Echo, error) {
 	// Create logger
 	logger := logFactory.CreateFromConfig()
 

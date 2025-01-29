@@ -3,6 +3,7 @@ package database
 
 import (
 	"fmt"
+	"log"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
@@ -37,4 +38,14 @@ func (db *Database) Begin() (*sqlx.Tx, error) {
 	}
 	db.logger.Debug("transaction started successfully")
 	return tx, nil
+}
+
+// Connect establishes a connection to the database
+func Connect(dataSourceName string) (*sqlx.DB, error) {
+	db, err := sqlx.Connect("mysql", dataSourceName)
+	if err != nil {
+		log.Fatalf("failed to connect to database: %v", err)
+		return nil, err
+	}
+	return db, nil
 }

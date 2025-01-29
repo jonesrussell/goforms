@@ -15,21 +15,21 @@ type AuthHandlerOption func(*AuthHandler)
 
 // AuthHandler handles authentication related requests
 type AuthHandler struct {
-	userService user.Service
+	UserService *user.Service
 	Logger      logging.Logger
 }
 
 // NewAuthHandler creates a new auth handler
-func NewAuthHandler(logger logging.Logger, userService user.Service) *AuthHandler {
+func NewAuthHandler(logger logging.Logger, userService *user.Service) *AuthHandler {
 	return &AuthHandler{
 		Logger:      logger,
-		userService: userService,
+		UserService: userService,
 	}
 }
 
 // Validate validates that required dependencies are set
 func (h *AuthHandler) Validate() error {
-	if h.userService == nil {
+	if h.UserService == nil {
 		return fmt.Errorf("user service is required")
 	}
 	if h.Logger == nil {
@@ -61,7 +61,7 @@ func (h *AuthHandler) handleSignup(c echo.Context) error {
 
 	h.Logger.Debug("Received signup data", logging.Any("signup", signup))
 
-	existingUser, err := h.userService.GetByEmail(signup.Email)
+	existingUser, err := h.UserService.GetByEmail(signup.Email)
 	if err != nil {
 		h.Logger.Error("Failed to check existing user", logging.Error(err))
 		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "Internal server error"})
@@ -71,7 +71,7 @@ func (h *AuthHandler) handleSignup(c echo.Context) error {
 		return c.JSON(http.StatusConflict, map[string]string{"message": "Email already in use"})
 	}
 
-	createdUser, err := h.userService.SignUp(c.Request().Context(), &signup)
+	createdUser, err := h.UserService.SignUp(c.Request().Context(), &signup)
 	if err != nil {
 		h.Logger.Error("Failed to sign up user", logging.Error(err))
 		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "Failed to create user"})
@@ -101,7 +101,7 @@ func (h *AuthHandler) handleLogin(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	tokens, err := h.userService.Login(c.Request().Context(), &login)
+	tokens, err := h.UserService.Login(c.Request().Context(), &login)
 	if err != nil {
 		h.Logger.Error("auth: failed to authenticate user", logging.Error(err))
 		return echo.NewHTTPError(http.StatusUnauthorized, "Invalid credentials")
@@ -126,7 +126,7 @@ func (h *AuthHandler) handleLogout(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnauthorized, "Missing authorization token")
 	}
 
-	if err := h.userService.Logout(c.Request().Context(), token); err != nil {
+	if err := h.UserService.Logout(c.Request().Context(), token); err != nil {
 		h.Logger.Error("auth: failed to logout user", logging.Error(err))
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to logout")
 	}
