@@ -62,6 +62,12 @@ func (h *AuthHandler) handleSignup(c echo.Context) error {
 
 	h.Logger.Debug("Received signup data", logging.Any("signup", signupRequest))
 
+	// Validate the signup request
+	if err := c.Validate(signupRequest); err != nil {
+		h.Logger.Error("Validation failed", logging.Error(err)) // Log the validation error
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": "Invalid input"})
+	}
+
 	// Check if the email already exists
 	existingUser, err := h.UserService.GetByEmail(signupRequest.Email)
 	if err != nil {

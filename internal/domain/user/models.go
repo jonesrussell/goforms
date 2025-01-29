@@ -47,8 +47,8 @@ type Request struct {
 type Signup struct {
 	Email     string `json:"email" validate:"required,email"`
 	Password  string `json:"password" validate:"required,min=8"`
-	FirstName string `json:"first_name" validate:"required"`
-	LastName  string `json:"last_name" validate:"required"`
+	FirstName string `json:"first_name" validate:"omitempty"`
+	LastName  string `json:"last_name" validate:"omitempty"`
 }
 
 // Login represents the user login credentials
