@@ -31,11 +31,15 @@ func NewUserRepository(logger logging.Logger, db *database.DB) Repository {
 
 // Create stores a new user
 func (r *userRepository) Create(user *User) error {
+	// Log the user details being saved (excluding the password)
+	r.logger.Debug("Saving user to database", logging.Any("user", user))
+
 	// Use the logger to log the creation attempt
 	r.logger.Debug("Creating user", logging.String("email", user.Email))
 
 	// Implement the logic to create a user in the database
-	_, err := r.db.Exec("INSERT INTO users (email, hashed_password) VALUES (?, ?)", user.Email, user.HashedPassword)
+	_, err := r.db.Exec("INSERT INTO users (email, hashed_password, first_name, last_name, role, active) VALUES (?, ?, ?, ?, ?, ?)",
+		user.Email, user.HashedPassword, user.FirstName, user.LastName, user.Role, user.Active)
 	if err != nil {
 		r.logger.Error("Failed to create user", logging.Error(err))
 		return err

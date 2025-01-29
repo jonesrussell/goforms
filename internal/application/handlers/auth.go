@@ -53,11 +53,7 @@ func (h *AuthHandler) Register(e *echo.Echo) {
 
 // handleSignup handles user registration
 func (h *AuthHandler) handleSignup(c echo.Context) error {
-	var signupRequest struct {
-		Email     string `json:"email"`
-		Password  string `json:"password"`
-		FirstName string `json:"first_name"`
-	}
+	var signupRequest user.Signup // Use the Signup struct directly
 
 	if err := c.Bind(&signupRequest); err != nil {
 		h.Logger.Error("Failed to bind signup data", logging.Error(err))
@@ -66,6 +62,7 @@ func (h *AuthHandler) handleSignup(c echo.Context) error {
 
 	h.Logger.Debug("Received signup data", logging.Any("signup", signupRequest))
 
+	// Check if the email already exists
 	existingUser, err := h.UserService.GetByEmail(signupRequest.Email)
 	if err != nil {
 		h.Logger.Error("Failed to check existing user", logging.Error(err))
@@ -76,12 +73,14 @@ func (h *AuthHandler) handleSignup(c echo.Context) error {
 		return c.JSON(http.StatusConflict, map[string]string{"message": "Email already in use"})
 	}
 
-	createdUser, err := h.UserService.SignUp(signupRequest.Email, signupRequest.Password, signupRequest.FirstName)
+	// Pass the Signup struct to the SignUp method
+	createdUser, err := h.UserService.SignUp(&signupRequest)
 	if err != nil {
 		h.Logger.Error("Failed to sign up user", logging.Error(err))
 		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "Failed to create user"})
 	}
 
+	h.Logger.Debug("User signed up successfully", logging.Any("createdUser", createdUser))
 	return c.JSON(http.StatusCreated, createdUser)
 }
 

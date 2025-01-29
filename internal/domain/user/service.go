@@ -37,17 +37,24 @@ func logAndWrapError(logger logging.Logger, msg string, err error) error {
 	return fmt.Errorf("%s: %w", msg, err)
 }
 
-func (s *Service) SignUp(email, password, firstName string) (*User, error) {
-	user := &User{
-		Email:          email,
-		FirstName:      firstName,
-		HashedPassword: password, // Ensure you are storing the password correctly
+func (s *Service) SignUp(signup *Signup) (*User, error) {
+	user := ConvertSignupToUser(signup) // Convert Signup to User
+
+	// Log the user details before saving (excluding the password)
+	s.logger.Debug("Preparing to create user", logging.Any("user", user))
+
+	// Hash the password before saving
+	if err := user.SetPassword(signup.Password); err != nil {
+		return nil, err // Return error if password hashing fails
 	}
 
-	err := s.repo.Create(user)
+	err := s.repo.Create(user) // Save the user to the database
 	if err != nil {
+		s.logger.Error("Failed to create user", logging.Error(err))
 		return nil, err // Return the error if creation fails
 	}
+
+	s.logger.Debug("User created successfully", logging.Any("user", user))
 	return user, nil // Return the created user and nil error
 }
 
