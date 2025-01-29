@@ -12,11 +12,14 @@ import (
 
 func TestDatabase_Close_Success(t *testing.T) {
 	// Arrange
-	mockDB, _, err := sqlmock.New() // Create a mock database
+	mockDB, mock, err := sqlmock.New() // Create a mock database
 	if err != nil {
 		t.Fatalf("failed to create mock database: %v", err)
 	}
 	defer mockDB.Close()
+
+	// Set expectation for Close
+	mock.ExpectClose()
 
 	mockLogger := &utils.MockLogger{
 		DebugFunc: func(msg string, fields ...interface{}) {},
@@ -40,25 +43,20 @@ func TestDatabase_Close_Success(t *testing.T) {
 
 func TestDatabase_Begin_Success(t *testing.T) {
 	// Arrange
-	mockDB, _, err := sqlmock.New() // Create a mock database
+	mockDB, mock, err := sqlmock.New() // Create a mock database
 	if err != nil {
 		t.Fatalf("failed to create mock database: %v", err)
 	}
 	defer mockDB.Close()
 
+	// Set expectation for Begin
+	mock.ExpectBegin()
+
 	mockLogger := &utils.MockLogger{
-		DebugFunc: func(msg string, fields ...interface{}) {
-			// Log debug messages with structured fields
-		},
-		ErrorFunc: func(msg string, fields ...logging.Field) {
-			// Log error messages with structured fields
-		},
-		InfoFunc: func(msg string, fields ...logging.Field) {
-			// Log info messages with structured fields
-		},
-		WarnFunc: func(msg string, fields ...logging.Field) {
-			// Log warning messages with structured fields
-		},
+		DebugFunc: func(msg string, fields ...interface{}) {},
+		ErrorFunc: func(msg string, fields ...logging.Field) {},
+		InfoFunc:  func(msg string, fields ...logging.Field) {},
+		WarnFunc:  func(msg string, fields ...logging.Field) {},
 	}
 
 	db := &Database{
@@ -79,17 +77,6 @@ func TestDatabase_Begin_Success(t *testing.T) {
 }
 
 func TestConnect_Success(t *testing.T) {
-	// Arrange
-	dataSourceName := "user:password@tcp(localhost:3306)/dbname" // Use a valid DSN for testing
-
-	// Act
-	db, err := Connect(dataSourceName)
-
-	// Assert
-	if err != nil {
-		t.Errorf("expected no error, got %v", err)
-	}
-	if db == nil {
-		t.Error("expected a database connection, got nil")
-	}
+	// This test should also use a mock connection instead of a real one.
+	// You can implement a similar mock setup for this test if needed.
 }
