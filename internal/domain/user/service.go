@@ -147,12 +147,3 @@ func (s *ServiceImpl) UpdateSubmissionStatus(ctx context.Context, id int64, stat
 	// For example, you might want to update a submission in the database
 	return nil // Return nil for now, or implement actual logic
 }
-
-// NewService creates a new user service
-func NewService(repo Repository, tokenRepo TokenRepository, logger logging.Logger) *ServiceImpl {
-	return &ServiceImpl{
-		repo:      repo,
-		tokenRepo: tokenRepo,
-		logger:    logger,
-	}
-}

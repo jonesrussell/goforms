@@ -9,3 +9,8 @@ type LoggerConfigInterface interface {
 type LoggerConfig struct {
 	Level string // Log level
 }
+
+// Implement the LoggerConfigInterface
+func (lc *LoggerConfig) GetEnv() string {
+	return lc.Level // Or return the appropriate environment variable
+}

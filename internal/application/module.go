@@ -25,7 +25,6 @@ var Module = fx.Options(
 	fx.Provide(func(db *database.DB) user.TokenRepository {
 		return user.NewTokenRepository(db)
 	}),
-	fx.Provide(NewUserService),
 )
 
 // NewWebHandler creates a new WebHandler instance.

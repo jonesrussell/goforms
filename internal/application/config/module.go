@@ -16,8 +16,8 @@ var Module = fx.Module("config",
 	fx.Provide(
 		New, // Provide the New function to create a Config instance
 		fx.Annotate(func(cfg *Config) loggingconfig.LoggerConfigInterface {
-			return cfg // Pass the LoggerConfig interface to the logger
-		}, fx.As(new(loggingconfig.LoggerConfig))), // Provide the LoggerConfig interface
+			return &loggingconfig.LoggerConfig{Level: cfg.App.Env} // Pass the LoggerConfig instance
+		}, fx.As(new(loggingconfig.LoggerConfigInterface))), // Provide the LoggerConfig interface
 	),
 )
 

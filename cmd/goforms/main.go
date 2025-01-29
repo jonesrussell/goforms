@@ -14,9 +14,7 @@ import (
 	"github.com/jonesrussell/goforms/internal/application/database"
 	"github.com/jonesrussell/goforms/internal/application/handlers"
 	"github.com/jonesrussell/goforms/internal/application/logging"
-	"github.com/jonesrussell/goforms/internal/application/middleware"
 	"github.com/jonesrussell/goforms/internal/application/router"
-	"github.com/jonesrussell/goforms/internal/application/validator"
 	"github.com/jonesrussell/goforms/internal/domain"
 	"github.com/jonesrussell/goforms/internal/domain/contact"
 	"github.com/jonesrussell/goforms/internal/domain/user"
@@ -95,32 +93,20 @@ func startApp(app *fx.App) error {
 	return nil
 }
 
-func newServer(cfg *config.Config, logFactory *logging.Factory, userService *user.Service) (*echo.Echo, error) {
-	logger := logFactory.CreateFromConfig()
-
+func newServer() *echo.Echo {
 	e := echo.New()
-	e.HideBanner = true
-	e.HidePort = true
-
-	e.Validator = validator.NewValidator()
-
-	middleware.Setup(e, &middleware.Config{
-		Logger:      logger,
-		JWTSecret:   cfg.Security.JWTSecret,
-		UserService: userService,
-		EnableCSRF:  cfg.Security.CSRF.Enabled,
-	})
-
-	return e, nil
+	// Set up routes and middleware using userService
+	return e
 }
 
 type ServerParams struct {
 	fx.In
 
-	Echo     *echo.Echo
-	Config   *config.Config
-	Logger   logging.Logger
-	Handlers []handlers.Handler `group:"handlers"`
+	Echo        *echo.Echo
+	Config      *config.Config
+	Logger      logging.Logger
+	UserService *user.Service
+	Handlers    []handlers.Handler `group:"handlers"`
 }
 
 func startServer(p ServerParams) error {
