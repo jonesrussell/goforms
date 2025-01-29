@@ -1,25 +1,52 @@
-document.getElementById('signupForm').addEventListener('submit', function(event) {
+document.getElementById('signupForm').addEventListener('submit', async (event) => {
     event.preventDefault(); // Prevent the default form submission
 
-    // Gather form data
-    const formData = new FormData(this);
-    const data = Object.fromEntries(formData.entries());
+    try {
+        const data = gatherFormData(event.target);
+        const responseData = await sendFormData('/api/v1/auth/signup', data);
 
-    // Send data to the API
-    fetch('/api/v1/auth/signup', {
+        // Use the message component to display the message
+        renderMessage(responseData.message, responseData.success ? 'success' : 'error');
+    } catch (error) {
+        console.error('Error:', error);
+        renderMessage(error.message, 'error');
+    }
+});
+
+const gatherFormData = (form) => {
+    const formData = new FormData(form);
+    return Object.fromEntries(formData.entries());
+};
+
+const sendFormData = async (url, data) => {
+    const response = await fetch(url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify(data),
-    })
-    .then(response => response.json())
-    .then(data => {
-        // Handle success or error response
-        console.log('Success:', data);
-        // You can also update the UI or show a message to the user
-    })
-    .catch((error) => {
-        console.error('Error:', error);
     });
-});
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to sign up');
+    }
+
+    return await response.json();
+};
+
+const renderMessage = (text, type) => {
+    const messageArea = document.getElementById('flash-message');
+    const messageText = document.getElementById('flash-message-text');
+
+    // Clear previous messages
+    messageText.textContent = text;
+    messageArea.style.display = 'block'; // Show the message area
+
+    // Add success or error class
+    if (type === 'success') {
+        messageArea.className = 'flash-message flash-message-success'; // Add success class
+    } else {
+        messageArea.className = 'flash-message flash-message-error'; // Add error class
+    }
+};
