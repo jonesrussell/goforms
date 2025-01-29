@@ -12,8 +12,13 @@ document.getElementById('signupForm').addEventListener('submit', async (event) =
     try {
         const responseData = await sendFormData('/api/v1/auth/signup', data);
 
-        // Use the message component to display the message
-        renderMessage(responseData.message, responseData.success ? 'success' : 'error');
+        console.log('Response Data:', responseData);
+        // Check if the response indicates success
+        if (responseData.success) {
+            renderMessage('Signup successful!', 'success');
+        } else {
+            renderMessage(responseData.message || 'Signup failed.', 'error');
+        }
     } catch (error) {
         console.error('Error:', error);
         renderMessage(error.message, 'error');
