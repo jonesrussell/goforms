@@ -15,12 +15,12 @@ type AuthHandlerOption func(*AuthHandler)
 
 // AuthHandler handles authentication related requests
 type AuthHandler struct {
-	UserService *user.Service
+	UserService user.Service
 	Logger      logging.Logger
 }
 
 // NewAuthHandler creates a new auth handler
-func NewAuthHandler(logger logging.Logger, userService *user.Service) *AuthHandler {
+func NewAuthHandler(logger logging.Logger, userService user.Service) *AuthHandler {
 	return &AuthHandler{
 		Logger:      logger,
 		UserService: userService,

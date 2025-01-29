@@ -17,7 +17,21 @@ var (
 )
 
 // Service defines the methods for user-related operations
-type Service struct {
+type Service interface {
+	DeleteUser(ctx context.Context, id uint) error
+	GetByEmail(email string) (*User, error)
+	GetUserByID(ctx context.Context, id uint) (*User, error)
+	ListUsers(ctx context.Context) ([]User, error)
+	Login(ctx context.Context, login *Login) (*TokenPair, error)
+	Logout(ctx context.Context, token string) error
+	SignUp(signup *Signup) (*User, error)
+	UpdateSubmissionStatus(ctx context.Context, id int64, status string) error
+	UpdateUser(ctx context.Context, user *User) error
+	IsTokenBlacklisted(token string) bool
+}
+
+// Service defines the methods for user-related operations
+type ServiceImpl struct {
 	repo      Repository      // User repository for user-related operations
 	tokenRepo TokenRepository // Token repository for token-related operations
 	logger    logging.Logger
@@ -37,7 +51,7 @@ func logAndWrapError(logger logging.Logger, msg string, err error) error {
 	return fmt.Errorf("%s: %w", msg, err)
 }
 
-func (s *Service) SignUp(signup *Signup) (*User, error) {
+func (s *ServiceImpl) SignUp(signup *Signup) (*User, error) {
 	user := ConvertSignupToUser(signup) // Convert Signup to User
 
 	// Log the user details before saving (excluding the password)
@@ -58,7 +72,7 @@ func (s *Service) SignUp(signup *Signup) (*User, error) {
 	return user, nil // Return the created user and nil error
 }
 
-func (s *Service) GetUserByID(ctx context.Context, id uint) (*User, error) {
+func (s *ServiceImpl) GetUserByID(ctx context.Context, id uint) (*User, error) {
 	user, err := s.repo.Get(id)
 	if err != nil {
 		return nil, logAndWrapError(s.logger, "failed to get user", err)
@@ -66,21 +80,21 @@ func (s *Service) GetUserByID(ctx context.Context, id uint) (*User, error) {
 	return user, nil
 }
 
-func (s *Service) UpdateUser(ctx context.Context, user *User) error {
+func (s *ServiceImpl) UpdateUser(ctx context.Context, user *User) error {
 	if err := s.repo.Update(user); err != nil {
 		return logAndWrapError(s.logger, "failed to update user", err)
 	}
 	return nil
 }
 
-func (s *Service) DeleteUser(ctx context.Context, id uint) error {
+func (s *ServiceImpl) DeleteUser(ctx context.Context, id uint) error {
 	if err := s.repo.Delete(id); err != nil {
 		return logAndWrapError(s.logger, "failed to delete user", err)
 	}
 	return nil
 }
 
-func (s *Service) ListUsers(ctx context.Context) ([]User, error) {
+func (s *ServiceImpl) ListUsers(ctx context.Context) ([]User, error) {
 	users, err := s.repo.List()
 	if err != nil {
 		return nil, logAndWrapError(s.logger, "failed to list users", err)
@@ -88,7 +102,7 @@ func (s *Service) ListUsers(ctx context.Context) ([]User, error) {
 	return users, nil
 }
 
-func (s *Service) GetByEmail(email string) (*User, error) {
+func (s *ServiceImpl) GetByEmail(email string) (*User, error) {
 	user, err := s.repo.GetByEmail(email)
 	if err != nil {
 		return nil, logAndWrapError(s.logger, "failed to get user by email", err)
@@ -96,7 +110,7 @@ func (s *Service) GetByEmail(email string) (*User, error) {
 	return user, nil
 }
 
-func (s *Service) Login(ctx context.Context, login *Login) (*TokenPair, error) {
+func (s *ServiceImpl) Login(ctx context.Context, login *Login) (*TokenPair, error) {
 	user, err := s.repo.GetByEmail(login.Email)
 	if err != nil {
 		return nil, fmt.Errorf("failed to authenticate user: %w", err)
@@ -115,7 +129,7 @@ func (s *Service) Login(ctx context.Context, login *Login) (*TokenPair, error) {
 }
 
 // Logout invalidates the user's token
-func (s *Service) Logout(ctx context.Context, token string) error {
+func (s *ServiceImpl) Logout(ctx context.Context, token string) error {
 	err := s.tokenRepo.BlacklistToken(token)
 	if err != nil {
 		return fmt.Errorf("failed to logout user: %w", err)
@@ -123,14 +137,20 @@ func (s *Service) Logout(ctx context.Context, token string) error {
 	return nil
 }
 
-func (s *Service) IsTokenBlacklisted(token string) bool {
+func (s *ServiceImpl) IsTokenBlacklisted(token string) bool {
 	// Implement your logic to check if the token is blacklisted
 	return s.tokenRepo.IsTokenBlacklisted(token) // Assuming this method exists in your TokenRepository
 }
 
+func (s *ServiceImpl) UpdateSubmissionStatus(ctx context.Context, id int64, status string) error {
+	// Implement your logic to update the submission status
+	// For example, you might want to update a submission in the database
+	return nil // Return nil for now, or implement actual logic
+}
+
 // NewService creates a new user service
-func NewService(repo Repository, tokenRepo TokenRepository, logger logging.Logger) *Service {
-	return &Service{
+func NewService(repo Repository, tokenRepo TokenRepository, logger logging.Logger) *ServiceImpl {
+	return &ServiceImpl{
 		repo:      repo,
 		tokenRepo: tokenRepo,
 		logger:    logger,
