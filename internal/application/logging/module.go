@@ -20,7 +20,7 @@ var Module = fx.Module("logging",
 )
 
 // NewLogger creates a new logger instance based on the environment configuration
-func NewLogger(cfg loggingconfig.LoggerConfig) Logger {
+func NewLogger(cfg loggingconfig.LoggerConfigInterface) Logger {
 	var zapLog *forbidden_zap.Logger
 	var zapSugaredLog *forbidden_zap.SugaredLogger
 	var err error

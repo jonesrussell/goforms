@@ -29,8 +29,8 @@ func (c *Config) GetEnv() string {
 	return c.App.Env
 }
 
-// LoggerConfig interface implementation
-var _ loggingconfig.LoggerConfig = (*Config)(nil)
+// LoggerConfigInterface implementation
+var _ loggingconfig.LoggerConfigInterface = (*Config)(nil)
 
 // DatabaseConfig holds all database-related configuration
 type DatabaseConfig struct {
