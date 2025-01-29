@@ -1,8 +1,15 @@
 document.getElementById('signupForm').addEventListener('submit', async (event) => {
     event.preventDefault(); // Prevent the default form submission
 
+    const data = gatherFormData(event.target);
+
+    // Validate required fields
+    if (!data.email || !data.password) {
+        renderMessage('Email and password are required.', 'error');
+        return;
+    }
+
     try {
-        const data = gatherFormData(event.target);
         const responseData = await sendFormData('/api/v1/auth/signup', data);
 
         // Use the message component to display the message
