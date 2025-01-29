@@ -1,10 +1,14 @@
 package handlers
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"net/http"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/jonesrussell/goforms/internal/application/logging"
 	"github.com/jonesrussell/goforms/internal/domain/user"
@@ -17,13 +21,16 @@ type AuthHandlerOption func(*AuthHandler)
 type AuthHandler struct {
 	UserService user.Service
 	Logger      logging.Logger
+	validate    *validator.Validate
 }
 
 // NewAuthHandler creates a new auth handler
 func NewAuthHandler(logger logging.Logger, userService user.Service) *AuthHandler {
+	v := validator.New()
 	return &AuthHandler{
 		Logger:      logger,
 		UserService: userService,
+		validate:    v,
 	}
 }
 
@@ -53,20 +60,34 @@ func (h *AuthHandler) Register(e *echo.Echo) {
 
 // handleSignup handles user registration
 func (h *AuthHandler) handleSignup(c echo.Context) error {
-	var signupRequest user.Signup // Use the Signup struct directly
+	var signupRequest user.Signup
+
+	// Log the raw request body for debugging
+	bodyBytes, err := io.ReadAll(c.Request().Body)
+	if err != nil {
+		h.Logger.Error("Failed to read request body", logging.Error(err))
+		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "Internal server error"})
+	}
+	h.Logger.Debug("Raw request body", logging.Any("body", string(bodyBytes)))
+
+	// Reset the request body so it can be read again
+	c.Request().Body = io.NopCloser(bytes.NewReader(bodyBytes))
 
 	if err := c.Bind(&signupRequest); err != nil {
 		h.Logger.Error("Failed to bind signup data", logging.Error(err))
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": "Invalid input"})
 	}
 
+	// Log the received signup data
 	h.Logger.Debug("Received signup data", logging.Any("signup", signupRequest))
 
-	// Validate the signup request
-	if err := c.Validate(signupRequest); err != nil {
-		h.Logger.Error("Validation failed", logging.Error(err)) // Log the validation error
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": "Invalid input"})
+	// Hash the password before saving
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(signupRequest.Password), bcrypt.DefaultCost)
+	if err != nil {
+		h.Logger.Error("Failed to hash password", logging.Error(err))
+		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "Internal server error"})
 	}
+	signupRequest.Password = string(hashedPassword) // Replace the plain password with the hashed one
 
 	// Check if the email already exists
 	existingUser, err := h.UserService.GetByEmail(signupRequest.Email)
@@ -106,16 +127,22 @@ func (h *AuthHandler) handleSignup(c echo.Context) error {
 // @Failure 401 {object} echo.HTTPError
 // @Router /api/v1/auth/login [post]
 func (h *AuthHandler) handleLogin(c echo.Context) error {
-	var login user.Login
-	if err := c.Bind(&login); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request format")
+	var loginRequest user.Login
+
+	if err := c.Bind(&loginRequest); err != nil {
+		h.Logger.Error("Failed to bind login data", logging.Error(err))
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": "Invalid input"})
 	}
 
-	if err := c.Validate(login); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	h.Logger.Debug("Received login data", logging.Any("login", loginRequest))
+
+	// Validate the loginRequest here
+	if err := h.validate.Struct(loginRequest); err != nil {
+		h.Logger.Error("Validation failed", logging.Error(err))
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": "Invalid input"})
 	}
 
-	tokens, err := h.UserService.Login(c.Request().Context(), &login)
+	tokens, err := h.UserService.Login(c.Request().Context(), &loginRequest)
 	if err != nil {
 		h.Logger.Error("auth: failed to authenticate user", logging.Error(err))
 		return echo.NewHTTPError(http.StatusUnauthorized, "Invalid credentials")

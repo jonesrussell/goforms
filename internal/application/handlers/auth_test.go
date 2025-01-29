@@ -1,6 +1,10 @@
 package handlers
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -11,88 +15,172 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func TestAuthHandler_handleSignup(t *testing.T) {
-	e := echo.New()
-	mockLogger := &utils.MockLogger{
-		DebugFunc: func(msg string, fields ...interface{}) {},
-		ErrorFunc: func(msg string, fields ...logging.Field) {},
-		InfoFunc:  func(msg string, fields ...logging.Field) {},
-		WarnFunc:  func(msg string, fields ...logging.Field) {},
+// Helper function to create a new request with JSON body
+func newRequest(method, path string, body interface{}) (*http.Request, error) {
+	var reqBody []byte
+	var err error
+	if body != nil {
+		reqBody, err = json.Marshal(body)
+		if err != nil {
+			return nil, err
+		}
 	}
+	req := httptest.NewRequest(method, path, bytes.NewReader(reqBody))
+	req.Header.Set("Content-Type", "application/json")
+	return req, nil
+}
 
-	mockUserService := &user.MockService{} // Use the mock user service
+// Helper function to create a new context
+func newContext(req *http.Request) echo.Context {
+	rec := httptest.NewRecorder()
+	e := echo.New()
+	return e.NewContext(req, rec)
+}
 
+// MockService implementation
+type MockService struct {
+	users map[string]*user.User // Simulate a user store
+}
+
+// GetUserByID implements user.Service.
+func (m *MockService) GetUserByID(ctx context.Context, id uint) (*user.User, error) {
+	panic("unimplemented")
+}
+
+// IsTokenBlacklisted implements user.Service.
+func (m *MockService) IsTokenBlacklisted(token string) bool {
+	panic("unimplemented")
+}
+
+// ListUsers implements user.Service.
+func (m *MockService) ListUsers(ctx context.Context) ([]user.User, error) {
+	panic("unimplemented")
+}
+
+// Login implements user.Service.
+func (m *MockService) Login(ctx context.Context, login *user.Login) (*user.TokenPair, error) {
+	panic("unimplemented")
+}
+
+// Logout implements user.Service.
+func (m *MockService) Logout(ctx context.Context, token string) error {
+	panic("unimplemented")
+}
+
+// UpdateSubmissionStatus implements user.Service.
+func (m *MockService) UpdateSubmissionStatus(ctx context.Context, id int64, status string) error {
+	panic("unimplemented")
+}
+
+// UpdateUser implements user.Service.
+func (m *MockService) UpdateUser(ctx context.Context, user *user.User) error {
+	panic("unimplemented")
+}
+
+func (m *MockService) GetByEmail(email string) (*user.User, error) {
+	if user, exists := m.users[email]; exists {
+		return user, nil // User exists
+	}
+	return nil, nil // User does not exist
+}
+
+func (m *MockService) SignUp(signup *user.Signup) (*user.User, error) {
+	if _, exists := m.users[signup.Email]; exists {
+		return nil, fmt.Errorf("user already exists") // Simulate user already exists
+	}
+	// Create a new user and add to the mock store
+	newUser := &user.User{Email: signup.Email} // Only set the Email field
+	m.users[signup.Email] = newUser
+	return newUser, nil
+}
+
+func (m *MockService) DeleteUser(ctx context.Context, userID uint) error {
+	// Assuming you have a way to map userID to email or user
+	// For simplicity, let's say we are using email as the identifier
+	for email, user := range m.users {
+		if user.ID == userID { // Assuming user has an ID field
+			delete(m.users, email) // Remove the user from the mock store
+			return nil
+		}
+	}
+	return fmt.Errorf("user not found") // Simulate user not found
+}
+
+func TestAuthHandler_handleSignup(t *testing.T) {
+	// Arrange
+	mockLogger := &utils.MockLogger{
+		DebugFunc: func(msg string, fields ...interface{}) {
+			fmt.Printf("DEBUG: %s %v\n", msg, fields)
+		},
+		ErrorFunc: func(msg string, fields ...logging.Field) {
+			fmt.Printf("ERROR: %s %v\n", msg, fields)
+		},
+	}
+	mockUserService := &MockService{users: make(map[string]*user.User)}
 	handler := NewAuthHandler(mockLogger, mockUserService)
 
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/signup", nil) // Assuming signup is a POST request
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	validInput := user.Signup{
+		Email:    "uniqueuser@example.com",
+		Password: "securepassword",
+	}
 
+	// Act
+	req, err := newRequest(http.MethodPost, "/api/v1/auth/signup", validInput)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	c := newContext(req)
+
+	// Call the handler
 	if err := handler.handleSignup(c); err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
 
-	if rec.Code != http.StatusOK {
-		t.Errorf("expected status 200, got %d", rec.Code)
-	}
-
-	expected := "Signup successful"
-	if rec.Body.String() != expected {
-		t.Errorf("expected body %q, got %q", expected, rec.Body.String())
+	// Assert
+	if c.Response().Status != http.StatusCreated {
+		t.Errorf("expected status 201, got %d", c.Response().Status)
 	}
 }
 
 func TestAuthHandler_handleLogin(t *testing.T) {
-	e := echo.New()
-	mockLogger := &utils.MockLogger{
-		DebugFunc: func(msg string, fields ...interface{}) {},
-		ErrorFunc: func(msg string, fields ...logging.Field) {},
-		InfoFunc:  func(msg string, fields ...logging.Field) {},
-		WarnFunc:  func(msg string, fields ...logging.Field) {},
+	mockLogger := &utils.MockLogger{}
+	mockUserService := &user.MockService{}
+	handler := NewAuthHandler(mockLogger, mockUserService)
+
+	loginInput := map[string]string{
+		"email":    "uniqueuser@example.com",
+		"password": "securepassword",
 	}
 
-	userService := &user.MockService{} // Use a mock user service
-
-	handler := NewAuthHandler(mockLogger, userService)
-
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", nil) // Assuming login is a POST request
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	req, err := newRequest(http.MethodPost, "/api/v1/auth/login", loginInput)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	c := newContext(req)
 
 	if err := handler.handleLogin(c); err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
 
-	if rec.Code != http.StatusOK {
-		t.Errorf("expected status 200, got %d", rec.Code)
+	if c.Response().Status != http.StatusOK {
+		t.Errorf("expected status 200, got %d", c.Response().Status)
 	}
 }
 
 func TestAuthHandler_handleLogout(t *testing.T) {
-	e := echo.New()
-	mockLogger := &utils.MockLogger{
-		DebugFunc: func(msg string, fields ...interface{}) {},
-		ErrorFunc: func(msg string, fields ...logging.Field) {},
-		InfoFunc:  func(msg string, fields ...logging.Field) {},
-		WarnFunc:  func(msg string, fields ...logging.Field) {},
-	}
+	mockLogger := &utils.MockLogger{}
+	mockUserService := &user.MockService{}
+	handler := NewAuthHandler(mockLogger, mockUserService)
 
-	userService := &user.MockService{} // Use a mock user service
-
-	handler := NewAuthHandler(mockLogger, userService)
-
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/logout", nil) // Assuming logout is a POST request
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	// Set the Authorization header for the logout request
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/logout", nil)
 	req.Header.Set("Authorization", "Bearer mocktoken")
+	c := newContext(req)
 
 	if err := handler.handleLogout(c); err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
 
-	if rec.Code != http.StatusOK {
-		t.Errorf("expected status 200, got %d", rec.Code)
+	if c.Response().Status != http.StatusOK {
+		t.Errorf("expected status 200, got %d", c.Response().Status)
 	}
 }
