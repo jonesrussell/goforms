@@ -13,7 +13,7 @@ import (
 
 // Database wraps the SQL connection pool
 type Database struct {
-	*sqlx.DB
+	DB     *sqlx.DB
 	logger logging.Logger
 }
 
@@ -48,4 +48,14 @@ func Connect(dataSourceName string) (*sqlx.DB, error) {
 		return nil, err
 	}
 	return db, nil
+}
+
+type DB struct {
+	// Add fields for your database connection, e.g., *sql.DB
+}
+
+// NewDB initializes a new DB instance.
+func NewDB() *DB {
+	// Initialize and return a new DB instance...
+	return &DB{}
 }

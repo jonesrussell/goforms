@@ -38,42 +38,36 @@ func main() {
 }
 
 func run() error {
-	// Load environment
+	loadEnvironment()
+	versionInfo := createVersionInfo()
+	app := createApp(versionInfo)
+	return startApp(app)
+}
+
+func loadEnvironment() {
 	if err := godotenv.Load(); err != nil {
 		log.Printf("Warning: Error loading .env file: %v\n", err)
 	}
+}
 
-	// Create version info
-	versionInfo := handlers.VersionInfo{
+func createVersionInfo() handlers.VersionInfo {
+	return handlers.VersionInfo{
 		Version:   version,
 		BuildTime: buildTime,
 		GitCommit: gitCommit,
 		GoVersion: goVersion,
 	}
+}
 
-	// Create app with DI
-	app := fx.New(
+func createApp(versionInfo handlers.VersionInfo) *fx.App {
+	return fx.New(
 		logging.Module,
 		config.Module,
 		database.Module,
 		domain.Module,
 		application.Module,
-		fx.Provide(
-			newServer, // This will provide *echo.Echo
-		),
-		// Version info first
-		fx.Provide(
-			func() handlers.VersionInfo {
-				return versionInfo
-			},
-		),
-		// Provide the AuthHandler with logger and userService directly
-		fx.Provide(
-			func(logger logging.Logger, userService *user.Service) *handlers.AuthHandler {
-				return handlers.NewAuthHandler(logger, userService)
-			},
-		),
-		// Add your WebHandler to the handlers
+		fx.Provide(newServer),
+		fx.Provide(func() handlers.VersionInfo { return versionInfo }),
 		fx.Provide(
 			func(logger logging.Logger, renderer *view.Renderer, contactService contact.Service) handlers.Handler {
 				h := handlers.NewWebHandler(logger, handlers.WithRenderer(renderer), handlers.WithContactService(contactService))
@@ -81,40 +75,31 @@ func run() error {
 				return h
 			},
 		),
-		// Add debug logging for dependency injection
 		fx.Invoke(func(log logging.Logger) {
 			log.Debug("checking module initialization")
 		}),
-		// Start server last
-		fx.Invoke(startServer), // Ensure the server is started
+		fx.Invoke(startServer),
 	)
+}
 
-	// Run app
+func startApp(app *fx.App) error {
 	ctx := context.Background()
 	if err := app.Start(ctx); err != nil {
 		return fmt.Errorf("failed to start application: %w", err)
 	}
-
 	<-app.Done()
-	if err := app.Stop(ctx); err != nil {
-		return fmt.Errorf("failed to stop application: %w", err)
-	}
-	return nil
+	return app.Stop(ctx)
 }
 
 func newServer(cfg *config.Config, logFactory *logging.Factory, userService *user.Service) (*echo.Echo, error) {
-	// Create logger
 	logger := logFactory.CreateFromConfig()
 
-	// Create Echo instance
 	e := echo.New()
 	e.HideBanner = true
 	e.HidePort = true
 
-	// Register validator
 	e.Validator = validator.NewValidator()
 
-	// Configure middleware
 	middleware.Setup(e, &middleware.Config{
 		Logger:      logger,
 		JWTSecret:   cfg.Security.JWTSecret,
@@ -125,7 +110,6 @@ func newServer(cfg *config.Config, logFactory *logging.Factory, userService *use
 	return e, nil
 }
 
-// ServerParams contains the dependencies for starting the server
 type ServerParams struct {
 	fx.In
 
@@ -140,28 +124,12 @@ func startServer(p ServerParams) error {
 		logging.Int("handler_count", len(p.Handlers)),
 	)
 
-	// Log each handler type
-	for i, h := range p.Handlers {
-		p.Logger.Debug("handler available",
-			logging.Int("index", i),
-			logging.String("type", fmt.Sprintf("%T", h)),
-		)
+	for _, h := range p.Handlers {
+		h.Register(p.Echo)
 	}
 
-	// Register API handlers
-	for i, h := range p.Handlers {
-		p.Logger.Debug("registering handler",
-			logging.Int("index", i),
-			logging.String("type", fmt.Sprintf("%T", h)),
-		)
-		h.Register(p.Echo) // Call the Register method on each handler
-		p.Logger.Debug("handler registered",
-			logging.Int("index", i),
-			logging.String("type", fmt.Sprintf("%T", h)),
-		)
-	}
+	p.Echo.POST("/signup", handlers.SignupHandler)
 
-	// Configure routes
 	router.Setup(p.Echo, &router.Config{
 		Handlers: p.Handlers,
 		Static: router.StaticConfig{
@@ -171,10 +139,9 @@ func startServer(p ServerParams) error {
 		Logger: p.Logger,
 	})
 
-	// Start server
 	addr := fmt.Sprintf("%s:%d", p.Config.Server.Host, p.Config.Server.Port)
 	if p.Config.Server.Port == 0 {
-		addr = fmt.Sprintf("%s:8090", p.Config.Server.Host) // Default to 8090 if port is not set
+		addr = fmt.Sprintf("%s:8090", p.Config.Server.Host)
 	}
 
 	p.Logger.Info("Starting server",

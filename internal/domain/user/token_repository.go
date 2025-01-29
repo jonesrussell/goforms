@@ -3,7 +3,6 @@ package user
 import (
 	"context"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/jonesrussell/goforms/internal/application/repositories/database"
 )
 
@@ -31,12 +30,12 @@ type TokenRepository interface {
 
 // TokenRepositoryImpl is the implementation of the TokenRepository interface
 type TokenRepositoryImpl struct {
-	db *sqlx.DB
+	db *database.DB
 }
 
 // NewTokenRepository creates a new TokenRepositoryImpl
 func NewTokenRepository(db *database.DB) TokenRepository {
-	return &TokenRepositoryImpl{db: db.DB}
+	return &TokenRepositoryImpl{db: db}
 }
 
 // Create inserts a new token into the database

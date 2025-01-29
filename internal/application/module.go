@@ -13,33 +13,31 @@ import (
 
 // Module combines all application-level modules and providers.
 var Module = fx.Options(
-	// Provide your application-level dependencies here
 	fx.Provide(
 		// View Renderer
 		view.NewRenderer,
 
-		// Handlers
-		AsHandler(func(logger logging.Logger, renderer *view.Renderer, contactService contact.Service) *handlers.WebHandler {
-			return handlers.NewWebHandler(logger,
-				handlers.WithRenderer(renderer),
-				handlers.WithContactService(contactService),
-			)
-		}),
-		// Add other handlers as needed
-		AsHandler(func(logger logging.Logger, userService *user.Service) *handlers.AuthHandler {
-			return handlers.NewAuthHandler(logger, userService)
-		}),
+		NewWebHandler,
+		NewAuthHandler,
 		user.NewInMemoryTokenRepository,
-		func(repo user.Repository, tokenRepo user.TokenRepository, logger logging.Logger) *user.Service {
-			return user.NewService(repo, tokenRepo, logger)
-		},
-		fx.Provide(
-			func(db *database.DB) user.TokenRepository {
-				return user.NewTokenRepository(db)
-			},
-		),
+		NewUserService,
 	),
+	fx.Provide(func(db *database.DB) user.TokenRepository {
+		return user.NewTokenRepository(db)
+	}),
 )
+
+func NewWebHandler(logger logging.Logger, renderer *view.Renderer, contactService contact.Service) *handlers.WebHandler {
+	return handlers.NewWebHandler(logger, handlers.WithRenderer(renderer), handlers.WithContactService(contactService))
+}
+
+func NewAuthHandler(logger logging.Logger, userService *user.Service) *handlers.AuthHandler {
+	return handlers.NewAuthHandler(logger, userService)
+}
+
+func NewUserService(repo user.Repository, tokenRepo user.TokenRepository, logger logging.Logger) *user.Service {
+	return user.NewService(repo, tokenRepo, logger)
+}
 
 // AsHandler annotates the given constructor to state that
 // it provides a handler to the "handlers" group.
