@@ -87,8 +87,12 @@ func startApp(app *fx.App) error {
 	if err := app.Start(ctx); err != nil {
 		return fmt.Errorf("failed to start application: %w", err)
 	}
+
+	if err := app.Stop(ctx); err != nil {
+		log.Printf("Error stopping application: %v", err)
+	}
 	<-app.Done()
-	return app.Stop(ctx)
+	return nil
 }
 
 func newServer(cfg *config.Config, logFactory *logging.Factory, userService *user.Service) (*echo.Echo, error) {
@@ -127,8 +131,6 @@ func startServer(p ServerParams) error {
 	for _, h := range p.Handlers {
 		h.Register(p.Echo)
 	}
-
-	p.Echo.POST("/signup", handlers.SignupHandler)
 
 	router.Setup(p.Echo, &router.Config{
 		Handlers: p.Handlers,

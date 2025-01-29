@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/labstack/echo/v4"
 
@@ -239,4 +240,9 @@ func (h *WebHandler) handleLogin(c echo.Context) error {
 	}
 	h.Logger.Debug("login page rendered successfully")
 	return nil
+}
+
+// HomeHandler handles requests to the homepage
+func HomeHandler(c echo.Context) error {
+	return c.String(http.StatusOK, "Welcome to the Homepage!")
 }

@@ -17,24 +17,28 @@ var Module = fx.Options(
 		// View Renderer
 		view.NewRenderer,
 
-		NewWebHandler,
-		NewAuthHandler,
+		// Handlers
+		AsHandler(NewWebHandler),
+		AsHandler(NewAuthHandler),
 		user.NewInMemoryTokenRepository,
-		NewUserService,
 	),
 	fx.Provide(func(db *database.DB) user.TokenRepository {
 		return user.NewTokenRepository(db)
 	}),
+	fx.Provide(NewUserService),
 )
 
+// NewWebHandler creates a new WebHandler instance.
 func NewWebHandler(logger logging.Logger, renderer *view.Renderer, contactService contact.Service) *handlers.WebHandler {
 	return handlers.NewWebHandler(logger, handlers.WithRenderer(renderer), handlers.WithContactService(contactService))
 }
 
+// NewAuthHandler creates a new AuthHandler instance.
 func NewAuthHandler(logger logging.Logger, userService *user.Service) *handlers.AuthHandler {
 	return handlers.NewAuthHandler(logger, userService)
 }
 
+// NewUserService creates a new UserService instance.
 func NewUserService(repo user.Repository, tokenRepo user.TokenRepository, logger logging.Logger) *user.Service {
 	return user.NewService(repo, tokenRepo, logger)
 }
