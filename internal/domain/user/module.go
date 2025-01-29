@@ -7,10 +7,10 @@ import (
 	"github.com/jonesrussell/goforms/internal/application/repositories/database"
 )
 
-// Module provides the user dependencies
+// Module provides the user-related dependencies
 var Module = fx.Module("user",
 	fx.Provide(
-		NewStore,   // Provide the user repository
+		NewStore,   // Ensure this is the only place you provide user.Repository
 		NewService, // Provide the user service
 	),
 	fx.Invoke(func(logger logging.Logger) {

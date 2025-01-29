@@ -64,6 +64,7 @@ func createApp(versionInfo handlers.VersionInfo) *fx.App {
 		database.Module,
 		domain.Module,
 		application.Module,
+		user.Module,
 		fx.Provide(newServer),
 		fx.Provide(func() handlers.VersionInfo { return versionInfo }),
 		fx.Provide(
@@ -93,7 +94,7 @@ func startApp(app *fx.App) error {
 	return nil
 }
 
-func newServer() *echo.Echo {
+func newServer(userService *user.Service) *echo.Echo {
 	e := echo.New()
 	// Set up routes and middleware using userService
 	return e

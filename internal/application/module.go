@@ -13,6 +13,8 @@ import (
 
 // Module combines all application-level modules and providers.
 var Module = fx.Options(
+	user.Module,
+
 	fx.Provide(
 		// View Renderer
 		view.NewRenderer,
@@ -35,11 +37,6 @@ func NewWebHandler(logger logging.Logger, renderer *view.Renderer, contactServic
 // NewAuthHandler creates a new AuthHandler instance.
 func NewAuthHandler(logger logging.Logger, userService *user.Service) *handlers.AuthHandler {
 	return handlers.NewAuthHandler(logger, *userService)
-}
-
-// NewUserService creates a new UserService instance.
-func NewUserService(repo user.Repository, tokenRepo user.TokenRepository, logger logging.Logger) user.Service {
-	return user.NewService(repo, tokenRepo, logger)
 }
 
 // AsHandler annotates the given constructor to state that
