@@ -87,7 +87,11 @@ func (h *AuthHandler) handleSignup(c echo.Context) error {
 	}
 
 	h.Logger.Debug("User signed up successfully", logging.Any("createdUser", createdUser))
-	return c.JSON(http.StatusCreated, createdUser)
+	return c.JSON(http.StatusCreated, map[string]interface{}{
+		"success": true,
+		"message": "Signup successful!",
+		"user":    createdUser,
+	})
 }
 
 // handleLogin handles user authentication
