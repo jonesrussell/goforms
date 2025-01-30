@@ -16,7 +16,7 @@ var logInstance Logger // Declare logInstance
 // Module provides logging-related dependencies.
 var Module = fx.Options(
 	fx.Provide(
-		loggingconfig.NewConfig, // Ensure this is only provided once
+		loggingconfig.NewConfig, // Ensure this is only provided here
 		NewLogger,
 		NewFactory, // Added Factory to provide logger creation capabilities
 		NewFxLogger,

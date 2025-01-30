@@ -7,17 +7,12 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/kelseyhightower/envconfig"
-
-	"github.com/jonesrussell/goforms/internal/application/loggingconfig"
 )
 
 // Module provides the configuration dependencies
 var Module = fx.Module("config",
 	fx.Provide(
 		New, // Provide the New function to create a Config instance
-		fx.Annotate(func(cfg *Config) loggingconfig.LoggerConfigInterface {
-			return &loggingconfig.LoggerConfig{Level: cfg.App.Env} // Ensure LoggerConfig is defined in loggingconfig
-		}, fx.As(new(loggingconfig.LoggerConfigInterface))), // Provide the LoggerConfig interface
 	),
 )
 
