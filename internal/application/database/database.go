@@ -4,9 +4,11 @@ package database
 import (
 	"fmt"
 	"log"
+	"testing"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/jonesrussell/goforms/internal/application/logging"
 )
@@ -55,7 +57,21 @@ type DB struct {
 }
 
 // NewDB initializes a new DB instance.
-func NewDB() *DB {
+func NewDB(config *Config) (*DB, error) {
 	// Initialize and return a new DB instance...
-	return &DB{}
+	return &DB{}, nil
+}
+
+// Add the following test function
+func TestNewDB(t *testing.T) {
+	config := &Config{
+		DSN: "your-dsn-here", // Set up your config here
+	}
+
+	db, err := NewDB(config)
+
+	// Assertions
+	assert.NoError(t, err)
+	assert.NotNil(t, db)
+	// Add more assertions as needed
 }
