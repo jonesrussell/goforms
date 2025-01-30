@@ -97,6 +97,7 @@ func (h *AuthHandler) handleSignup(c echo.Context) error {
 	}
 
 	if existingUser != nil {
+		h.Logger.Warn("Email already in use", logging.String("email", signupRequest.Email))
 		return c.JSON(http.StatusConflict, map[string]string{"message": "Email already in use"})
 	}
 
@@ -129,6 +130,8 @@ func (h *AuthHandler) handleSignup(c echo.Context) error {
 func (h *AuthHandler) handleLogin(c echo.Context) error {
 	var loginRequest user.Login
 
+	h.Logger.Debug("Starting login process") // New log entry
+
 	if err := c.Bind(&loginRequest); err != nil {
 		h.Logger.Error("Failed to bind login data", logging.Error(err))
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": "Invalid input"})
@@ -142,12 +145,15 @@ func (h *AuthHandler) handleLogin(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": "Invalid input"})
 	}
 
+	h.Logger.Debug("Attempting to authenticate user", logging.String("email", loginRequest.Email))
+
 	tokens, err := h.UserService.Login(c.Request().Context(), &loginRequest)
 	if err != nil {
 		h.Logger.Error("auth: failed to authenticate user", logging.Error(err))
 		return echo.NewHTTPError(http.StatusUnauthorized, "Invalid credentials")
 	}
 
+	h.Logger.Debug("User authenticated successfully, returning tokens", logging.Any("tokens", tokens))
 	return c.JSON(http.StatusOK, tokens)
 }
 
@@ -164,13 +170,17 @@ func (h *AuthHandler) handleLogin(c echo.Context) error {
 func (h *AuthHandler) handleLogout(c echo.Context) error {
 	token := c.Request().Header.Get("Authorization")
 	if token == "" {
+		h.Logger.Warn("Missing authorization token")
 		return echo.NewHTTPError(http.StatusUnauthorized, "Missing authorization token")
 	}
+
+	h.Logger.Debug("Logging out user with token", logging.String("token", token))
 
 	if err := h.UserService.Logout(c.Request().Context(), token); err != nil {
 		h.Logger.Error("auth: failed to logout user", logging.Error(err))
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to logout")
 	}
 
+	h.Logger.Debug("User logged out successfully")
 	return c.JSON(http.StatusOK, map[string]string{"message": "Successfully logged out"})
 }

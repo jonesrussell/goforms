@@ -3,6 +3,7 @@ package user
 import (
 	"time"
 
+	"github.com/jonesrussell/goforms/internal/application/logging"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -11,8 +12,8 @@ type User struct {
 	ID             uint      `json:"id" db:"id"`
 	Email          string    `json:"email" db:"email"`
 	HashedPassword string    `json:"-" db:"hashed_password"`
-	FirstName      string    `json:"first_name" db:"first_name"`
-	LastName       string    `json:"last_name" db:"last_name"`
+	FirstName      *string   `json:"first_name" db:"first_name"`
+	LastName       *string   `json:"last_name" db:"last_name"`
 	Role           string    `json:"role" db:"role"`
 	Active         bool      `json:"active" db:"active"`
 	CreatedAt      time.Time `json:"created_at" db:"created_at"`
@@ -32,6 +33,9 @@ func (u *User) SetPassword(password string) error {
 // CheckPassword verifies if the provided password matches the user's hashed password
 func (u *User) CheckPassword(password string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(u.HashedPassword), []byte(password))
+	if err != nil {
+		logging.Error(err)
+	}
 	return err == nil
 }
 

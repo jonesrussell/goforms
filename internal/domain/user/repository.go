@@ -47,7 +47,7 @@ func (r *userRepository) Create(user *User) error {
 	_, err := r.db.Exec("INSERT INTO users (email, hashed_password, first_name, last_name, role, active) VALUES (?, ?, ?, ?, ?, ?)",
 		user.Email, user.HashedPassword, user.FirstName, user.LastName, user.Role, user.Active)
 	if err != nil {
-		r.logger.Error("Failed to create user", logging.Error(err))
+		r.logger.Error("Failed to create user", err)
 		return err
 	}
 
@@ -57,11 +57,10 @@ func (r *userRepository) Create(user *User) error {
 // Get retrieves a user by ID
 func (r *userRepository) Get(id uint) (*User, error) {
 	r.logger.Debug("Getting user by ID", logging.Uint("id", id))
-	// Implement the logic to get a user by ID from the database
 	user := &User{}
 	err := r.db.QueryRow("SELECT * FROM users WHERE id = ?", id).Scan(&user.Email, &user.HashedPassword, &user.FirstName, &user.LastName, &user.Role, &user.Active)
 	if err != nil {
-		r.logger.Error("Failed to get user by ID", logging.Error(err))
+		r.logger.Error("Failed to get user by ID", err)
 		return nil, err
 	}
 	return user, nil
@@ -70,23 +69,22 @@ func (r *userRepository) Get(id uint) (*User, error) {
 // GetByEmail retrieves a user by email
 func (r *userRepository) GetByEmail(email string) (*User, error) {
 	r.logger.Debug("Getting user by email", logging.String("email", email))
-	// Implement the logic to get a user by email from the database
 	user := &User{}
 	err := r.db.QueryRow("SELECT * FROM users WHERE email = ?", email).Scan(&user.Email, &user.HashedPassword, &user.FirstName, &user.LastName, &user.Role, &user.Active)
 	if err != nil {
-		r.logger.Error("Failed to get user by email", logging.Error(err))
+		r.logger.Error("Failed to get user by email", err)
 		return nil, err
 	}
+	r.logger.Debug("User retrieved", logging.Any("user", user))
 	return user, nil
 }
 
 // List retrieves all users
 func (r *userRepository) List() ([]User, error) {
 	r.logger.Debug("Listing users")
-	// Implement the logic to list all users from the database
 	rows, err := r.db.Query("SELECT * FROM users")
 	if err != nil {
-		r.logger.Error("Failed to list users", logging.Error(err))
+		r.logger.Error("Failed to list users", err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -95,7 +93,7 @@ func (r *userRepository) List() ([]User, error) {
 	for rows.Next() {
 		user := User{}
 		if err := rows.Scan(&user.Email, &user.HashedPassword, &user.FirstName, &user.LastName, &user.Role, &user.Active); err != nil {
-			r.logger.Error("Failed to scan user", logging.Error(err))
+			r.logger.Error("Failed to scan user", err)
 			return nil, err
 		}
 		users = append(users, user)
@@ -106,11 +104,10 @@ func (r *userRepository) List() ([]User, error) {
 // Update modifies an existing user
 func (r *userRepository) Update(user *User) error {
 	r.logger.Debug("Updating user", logging.Uint("id", user.ID))
-	// Implement the logic to update a user in the database
 	_, err := r.db.Exec("UPDATE users SET email = ?, hashed_password = ?, first_name = ?, last_name = ?, role = ?, active = ? WHERE id = ?",
 		user.Email, user.HashedPassword, user.FirstName, user.LastName, user.Role, user.Active, user.ID)
 	if err != nil {
-		r.logger.Error("Failed to update user", logging.Error(err))
+		r.logger.Error("Failed to update user", err)
 		return err
 	}
 	return nil
@@ -119,10 +116,9 @@ func (r *userRepository) Update(user *User) error {
 // Delete removes a user by ID
 func (r *userRepository) Delete(id uint) error {
 	r.logger.Debug("Deleting user", logging.Uint("id", id))
-	// Implement the logic to delete a user from the database
 	_, err := r.db.Exec("DELETE FROM users WHERE id = ?", id)
 	if err != nil {
-		r.logger.Error("Failed to delete user", logging.Error(err))
+		r.logger.Error("Failed to delete user", err)
 		return err
 	}
 	return nil

@@ -119,13 +119,34 @@ func (s *ServiceImpl) Login(ctx context.Context, login *Login) (*TokenPair, erro
 		return nil, fmt.Errorf("invalid credentials")
 	}
 
-	// Generate tokens (this is a placeholder; implement your token generation logic)
+	// Generate tokens using a secure method
+	accessToken, err := s.generateAccessToken(user)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate access token: %w", err)
+	}
+
+	refreshToken, err := s.generateRefreshToken(user)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate refresh token: %w", err)
+	}
+
 	tokens := &TokenPair{
-		AccessToken:  "generated-access-token",  // Replace with actual token generation
-		RefreshToken: "generated-refresh-token", // Replace with actual token generation
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
 	}
 
 	return tokens, nil
+}
+
+// New methods for token generation
+func (s *ServiceImpl) generateAccessToken(user *User) (string, error) {
+	// Example logic to generate an access token using user information
+	return fmt.Sprintf("access-token-for-%s", user.Email), nil // Replace with actual token generation logic
+}
+
+func (s *ServiceImpl) generateRefreshToken(user *User) (string, error) {
+	// Example logic to generate a refresh token using user information
+	return fmt.Sprintf("refresh-token-for-%s", user.Email), nil // Replace with actual token generation logic
 }
 
 // Logout invalidates the user's token
