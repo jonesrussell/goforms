@@ -1,80 +1,5 @@
 # Project TODO List
 
-## Completed
-
-- [x] Core Domain Implementation
-  - [x] Contact Submissions
-    - [x] CRUD Operations
-    - [x] Status Management
-    - [x] Input Validation
-    - [x] Unit Tests
-  - [x] Email Subscriptions
-    - [x] CRUD Operations
-    - [x] Status Management
-    - [x] Input Validation
-    - [x] Unit Tests
-- [x] API Implementation
-  - [x] RESTful Endpoints
-  - [x] Standardized Response Format
-  - [x] Error Handling
-  - [x] Input Validation
-  - [x] Unit Tests
-- [x] Testing Infrastructure
-  - [x] Mock Implementations
-  - [x] Test Utilities
-  - [x] Assertion Helpers
-  - [x] Test Setup Utilities
-  - [ ] Mock Cleanup
-    - [ ] Fix Directory Structure
-      - [ ] Remove duplicate contact store implementations:
-        - [ ] test/mocks/contact/store/mock_store.go
-        - [ ] test/mocks/store/contact/mock_store.go
-        - [ ] Keep only test/mocks/contact/store.go
-      - [ ] Remove redundant subscription stores:
-        - [ ] test/mocks/store/subscription/mock_store.go
-        - [ ] test/mocks/subscription_store.go
-        - [ ] Keep only test/mocks/subscription/store.go
-      - [ ] Remove test/mocks/models/mock_store.go (unused)
-    - [ ] Standardize Mock Files
-      - [ ] Remove mock_ prefix from all files
-      - [ ] Move files to domain-based directories:
-        - [ ] contact/
-          - [ ] service.go
-          - [ ] store.go
-        - [ ] subscription/
-          - [ ] service.go
-          - [ ] store.go
-        - [ ] user/
-          - [ ] service.go
-          - [ ] store.go
-        - [ ] logging/
-          - [ ] logger.go
-    - [ ] Fix Implementation Issues
-      - [ ] Add missing interface compliance checks
-      - [ ] Standardize mock pattern across all mocks:
-        - [ ] sync.Mutex for thread safety
-        - [ ] expectations system
-        - [ ] Verify() method
-        - [ ] Reset() method
-      - [ ] Fix logging mock to match logger interface
-      - [ ] Fix user service mock to match service interface
-      - [ ] Add proper error handling in all mocks
-    - [ ] Add Documentation
-      - [ ] Add package documentation to each mock package
-      - [ ] Add godoc comments for all exported types/methods
-      - [ ] Add usage examples in README.md
-- [x] Development Environment
-  - [x] Dev Container Setup
-  - [x] Task Automation
-  - [x] Hot Reload
-- [x] Security
-  - [x] Authentication System
-    - [x] User Model & Migration
-    - [x] JWT Token Implementation
-    - [x] Login Endpoint
-    - [x] Signup Endpoint
-    - [x] Middleware Protection
-
 ## In Progress
 
 - [ ] Contact Form Demo
@@ -217,3 +142,80 @@
     - [ ] Document package responsibilities
     - [ ] Document package interfaces
     - [ ] Add usage examples
+
+- [] Testing Infrastructure
+  - [ ] Mock Cleanup
+    - [ ] Fix Directory Structure
+      - [ ] Remove duplicate contact store implementations:
+        - [ ] test/mocks/contact/store/mock_store.go
+        - [ ] test/mocks/store/contact/mock_store.go
+        - [ ] Keep only test/mocks/contact/store.go
+      - [ ] Remove redundant subscription stores:
+        - [ ] test/mocks/store/subscription/mock_store.go
+        - [ ] test/mocks/subscription_store.go
+        - [ ] Keep only test/mocks/subscription/store.go
+      - [ ] Remove test/mocks/models/mock_store.go (unused)
+    - [ ] Standardize Mock Files
+      - [ ] Remove mock_ prefix from all files
+      - [ ] Move files to domain-based directories:
+        - [ ] contact/
+          - [ ] service.go
+          - [ ] store.go
+        - [ ] subscription/
+          - [ ] service.go
+          - [ ] store.go
+        - [ ] user/
+          - [ ] service.go
+          - [ ] store.go
+        - [ ] logging/
+          - [ ] logger.go
+    - [ ] Fix Implementation Issues
+      - [ ] Add missing interface compliance checks
+      - [ ] Standardize mock pattern across all mocks:
+        - [ ] sync.Mutex for thread safety
+        - [ ] expectations system
+        - [ ] Verify() method
+        - [ ] Reset() method
+      - [ ] Fix logging mock to match logger interface
+      - [ ] Fix user service mock to match service interface
+      - [ ] Add proper error handling in all mocks
+    - [ ] Add Documentation
+      - [ ] Add package documentation to each mock package
+      - [ ] Add godoc comments for all exported types/methods
+      - [ ] Add usage examples in README.md
+
+## Completed
+
+- [x] Core Domain Implementation
+  - [x] Contact Submissions
+    - [x] CRUD Operations
+    - [x] Status Management
+    - [x] Input Validation
+    - [x] Unit Tests
+  - [x] Email Subscriptions
+    - [x] CRUD Operations
+    - [x] Status Management
+    - [x] Input Validation
+    - [x] Unit Tests
+- [x] API Implementation
+  - [x] RESTful Endpoints
+  - [x] Standardized Response Format
+  - [x] Error Handling
+  - [x] Input Validation
+  - [x] Unit Tests
+- [x] Testing Infrastructure
+  - [x] Mock Implementations
+  - [x] Test Utilities
+  - [x] Assertion Helpers
+  - [x] Test Setup Utilities
+- [x] Development Environment
+  - [x] Dev Container Setup
+  - [x] Task Automation
+  - [x] Hot Reload
+- [x] Security
+  - [x] Authentication System
+    - [x] User Model & Migration
+    - [x] JWT Token Implementation
+    - [x] Login Endpoint
+    - [x] Signup Endpoint
+    - [x] Middleware Protection
