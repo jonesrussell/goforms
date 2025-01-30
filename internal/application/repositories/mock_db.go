@@ -1,7 +1,7 @@
 package repositories
 
 import (
-	"errors"
+	"fmt"
 
 	"github.com/jonesrussell/goforms/internal/domain/user"
 )
@@ -20,12 +20,18 @@ func NewMockDB() *MockDB {
 
 // Get simulates retrieving a record from the mock database.
 func (db *MockDB) Get(dest interface{}, query string, args ...interface{}) error {
-	// Simulate a simple retrieval logic
-	if user, ok := db.data[args[0].(string)]; ok {
-		dest = user
+	// Check if user exists in the mock database
+	if u, ok := db.data[args[0].(string)]; ok {
+		// Use a pointer to modify the value of dest
+		switch d := dest.(type) {
+		case *user.User:
+			*d = *(u.(*user.User)) // Dereference u to assign the value
+		default:
+			return fmt.Errorf("unsupported destination type")
+		}
 		return nil
 	}
-	return errors.New("not found")
+	return fmt.Errorf("user not found")
 }
 
 // Create simulates inserting a record into the mock database.
