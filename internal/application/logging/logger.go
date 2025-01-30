@@ -117,13 +117,6 @@ func Duration(key string, value time.Duration) forbidden_zap.Field {
 	return forbidden_zap.Duration(key, value)
 }
 
-// FxEventLogger is a logger that integrates with fx
-type FxEventLogger struct {
-	Logger Logger
-}
-
-// Implement any methods you need for FxEventLogger
-
 // WithPrefix creates a new logger with a specified prefix
 func (l *logger) WithPrefix(prefix string) Logger {
 	return &logger{

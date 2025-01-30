@@ -8,6 +8,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/fx"
+	"go.uber.org/fx/fxevent"
 
 	"github.com/jonesrussell/goforms/internal/application"
 	"github.com/jonesrussell/goforms/internal/application/config"
@@ -15,9 +16,10 @@ import (
 	"github.com/jonesrussell/goforms/internal/application/logging"
 	"github.com/jonesrussell/goforms/internal/application/repositories"
 	"github.com/jonesrussell/goforms/internal/application/router"
+	"github.com/jonesrussell/goforms/internal/application/view"
 	"github.com/jonesrussell/goforms/internal/domain"
+	"github.com/jonesrussell/goforms/internal/domain/contact"
 	"github.com/jonesrussell/goforms/internal/domain/user"
-	"github.com/jonesrussell/goforms/internal/presentation/view"
 )
 
 //nolint:gochecknoglobals // These variables are populated by -ldflags at build time
@@ -58,22 +60,28 @@ func createVersionInfo() handlers.VersionInfo {
 
 func createApp(versionInfo handlers.VersionInfo) *fx.App {
 	return fx.New(
+		fx.Provide(
+			func() handlers.VersionInfo {
+				return versionInfo
+			},
+		),
 		logging.Module,
 		config.Module,
 		domain.Module,
 		application.Module,
 		repositories.Module,
 		user.Module,
-		fx.Provide(func() handlers.VersionInfo { return versionInfo }),
-		fx.Provide(user.NewService),
-		fx.Provide(user.NewUserRepository),
-		fx.Provide(user.NewTokenRepository),
-		fx.Provide(newServer),
-		fx.Provide(func(logger logging.Logger, userService user.Service, renderer *view.Renderer) *handlers.AuthHandler {
-			return handlers.NewAuthHandler(logger, userService)
-		}),
-		fx.Provide(func(logger logging.Logger, renderer *view.Renderer) *handlers.WebHandler {
-			return handlers.NewWebHandler(logger, handlers.WithRenderer(renderer))
+		fx.Provide(
+			user.NewService,
+			user.NewUserRepository,
+			user.NewTokenRepository,
+		),
+		fx.Provide(
+			fx.Annotate(func(h *handlers.AuthHandler) handlers.Handler { return h }, fx.As(new(handlers.Handler))),
+			fx.Annotate(func(h *handlers.WebHandler) handlers.Handler { return h }, fx.As(new(handlers.Handler))),
+		),
+		fx.WithLogger(func(log logging.Logger) fxevent.Logger {
+			return &logging.FxEventLogger{Logger: log}
 		}),
 		fx.Invoke(startServer),
 	)
@@ -92,20 +100,23 @@ func startApp(app *fx.App) error {
 	return nil
 }
 
-func newServer(userService user.Service) *echo.Echo {
+func newServer() *echo.Echo {
 	e := echo.New()
-	// Set up routes and middleware using userService
+	// Set up routes and middleware without userService
 	return e
 }
 
 type ServerParams struct {
 	fx.In
 
-	Echo        *echo.Echo
-	Config      *config.Config
-	Logger      logging.Logger
-	AuthHandler *handlers.AuthHandler
-	WebHandler  *handlers.WebHandler
+	Echo           *echo.Echo
+	Config         *config.Config
+	Logger         logging.Logger
+	AuthHandler    *handlers.AuthHandler
+	WebHandler     *handlers.WebHandler
+	Renderer       *view.Renderer
+	ContactService contact.Service
+	UserService    user.Service
 }
 
 func startServer(p ServerParams) error {
