@@ -7,6 +7,7 @@ import (
 	"github.com/jonesrussell/goforms/internal/application/logging"
 	"github.com/jonesrussell/goforms/internal/application/repositories/database"
 	"github.com/jonesrussell/goforms/internal/domain/common"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // Repository defines the interface for user repository operations.
@@ -17,6 +18,7 @@ type Repository interface {
 	List() ([]common.User, error)
 	Update(u *common.User) error
 	Delete(id uint) error
+	SignUp(user *Signup) (*common.User, error)
 }
 
 // userRepository implements the Repository interface.
@@ -133,4 +135,31 @@ func (r *userRepository) Delete(id uint) error {
 		return err
 	}
 	return nil
+}
+
+// SignUp implements the SignUp method of the Repository interface.
+func (r *userRepository) SignUp(user *Signup) (*common.User, error) {
+	// Hash the password before saving
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if err != nil {
+		r.logger.Error("Failed to hash password", logging.Error(err))
+		return nil, err
+	}
+
+	// Create a new common.User instance
+	newUser := &common.User{
+		Email:          user.Email,
+		HashedPassword: string(hashedPassword),
+		Active:         true, // Set default active status
+	}
+
+	// Implement the logic to create a user in the database
+	_, err = r.db.Exec("INSERT INTO users (email, password, first_name, last_name, role, active) VALUES (?, ?, ?, ?, ?, ?)",
+		newUser.Email, newUser.Password, newUser.FirstName, newUser.LastName, newUser.Role, newUser.Active)
+	if err != nil {
+		r.logger.Error("Failed to create user", err)
+		return nil, err
+	}
+
+	return newUser, nil
 }

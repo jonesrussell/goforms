@@ -181,12 +181,6 @@ func (s *ServiceImpl) UpdateSubmissionStatus(ctx context.Context, id int64, stat
 	return nil // Return nil for now, or implement actual logic
 }
 
-// Implement the methods defined in the Service interface
-func (s *ServiceImpl) SomeMethod() error {
-	// Implementation here
-	return nil
-}
-
 // NewService creates a new user service
 func NewService(repo Repository, tokenRepo TokenRepository, logger logging.Logger) Service {
 	return &ServiceImpl{

@@ -11,14 +11,12 @@ import (
 
 	"github.com/jonesrussell/goforms/internal/application"
 	"github.com/jonesrussell/goforms/internal/application/config"
-	"github.com/jonesrussell/goforms/internal/application/database"
 	"github.com/jonesrussell/goforms/internal/application/handlers"
 	"github.com/jonesrussell/goforms/internal/application/logging"
+	"github.com/jonesrussell/goforms/internal/application/repositories"
 	"github.com/jonesrussell/goforms/internal/application/router"
 	"github.com/jonesrussell/goforms/internal/domain"
-	"github.com/jonesrussell/goforms/internal/domain/contact"
 	"github.com/jonesrussell/goforms/internal/domain/user"
-	"github.com/jonesrussell/goforms/internal/presentation/view"
 )
 
 //nolint:gochecknoglobals // These variables are populated by -ldflags at build time
@@ -61,32 +59,12 @@ func createApp(versionInfo handlers.VersionInfo) *fx.App {
 	return fx.New(
 		logging.Module,
 		config.Module,
-		database.Module,
 		domain.Module,
 		application.Module,
+		repositories.Module,
+		user.Module,
 		fx.Provide(newServer),
 		fx.Provide(func() handlers.VersionInfo { return versionInfo }),
-		fx.Provide(
-			func(logger logging.Logger, renderer *view.Renderer, contactService contact.Service, userRepo user.Repository, tokenRepo user.TokenRepository) user.Service {
-				return user.NewService(userRepo, tokenRepo, logger)
-			},
-		),
-		fx.Provide(
-			func(logger logging.Logger, renderer *view.Renderer, contactService contact.Service, userService user.Service) handlers.Handler {
-				h := handlers.NewWebHandler(logger, handlers.WithRenderer(renderer), handlers.WithContactService(contactService))
-				logger.Debug("WebHandler created successfully")
-				return h
-			},
-		),
-		fx.Provide(
-			func(userService user.Service) *user.Service {
-				return &userService
-			},
-		),
-		fx.Invoke(func(log logging.Logger) {
-			log.Debug("checking module initialization")
-		}),
-		fx.Invoke(startServer),
 	)
 }
 
@@ -103,7 +81,7 @@ func startApp(app *fx.App) error {
 	return nil
 }
 
-func newServer(userService *user.Service) *echo.Echo {
+func newServer(userService user.Service) *echo.Echo {
 	e := echo.New()
 	// Set up routes and middleware using userService
 	return e
@@ -112,11 +90,10 @@ func newServer(userService *user.Service) *echo.Echo {
 type ServerParams struct {
 	fx.In
 
-	Echo        *echo.Echo
-	Config      *config.Config
-	Logger      logging.Logger
-	UserService *user.Service
-	Handlers    []handlers.Handler `group:"handlers"`
+	Echo     *echo.Echo
+	Config   *config.Config
+	Logger   logging.Logger
+	Handlers []handlers.Handler `group:"handlers"`
 }
 
 func startServer(p ServerParams) error {

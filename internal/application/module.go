@@ -5,7 +5,6 @@ import (
 
 	"github.com/jonesrussell/goforms/internal/application/handlers"
 	"github.com/jonesrussell/goforms/internal/application/logging"
-	"github.com/jonesrussell/goforms/internal/application/repositories/database"
 	"github.com/jonesrussell/goforms/internal/domain/contact"
 	"github.com/jonesrussell/goforms/internal/domain/user"
 	"github.com/jonesrussell/goforms/internal/presentation/view"
@@ -20,12 +19,7 @@ var Module = fx.Options(
 		// Handlers
 		AsHandler(NewWebHandler),
 		AsHandler(NewAuthHandler),
-		user.NewInMemoryTokenRepository,
 	),
-
-	fx.Provide(func(db *database.DB) user.TokenRepository {
-		return user.NewTokenRepository(db)
-	}),
 )
 
 // NewWebHandler creates a new WebHandler instance.
