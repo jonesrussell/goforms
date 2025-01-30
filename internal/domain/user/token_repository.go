@@ -4,20 +4,13 @@ import (
 	"context"
 
 	"github.com/jonesrussell/goforms/internal/application/repositories/database"
+	"github.com/jonesrussell/goforms/internal/domain/common"
 )
-
-// Remove the unused type and its methods
-// type tokenRepository struct {
-//     logger logging.Logger
-//     db     *database.DB
-// }
-
-// func (r *tokenRepository) BlacklistToken(token string) error {
-//     // Implementation...
-// }
 
 // TokenRepository defines the interface for token management
 type TokenRepository interface {
+	GenerateTokens(user *common.User) (*TokenPair, error)
+	InvalidateToken(token string) error
 	SaveToken(userID string, token string) error
 	GetToken(userID string) (string, error)
 	IsTokenBlacklisted(token string) bool
@@ -38,6 +31,21 @@ type TokenRepositoryImpl struct {
 // NewTokenRepository creates a new TokenRepositoryImpl
 func NewTokenRepository(db *database.DB) TokenRepository {
 	return &TokenRepositoryImpl{db: db}
+}
+
+// Implement the GenerateTokens method
+func (r *TokenRepositoryImpl) GenerateTokens(user *common.User) (*TokenPair, error) {
+	// Implementation for generating tokens
+	return &TokenPair{
+		AccessToken:  "mockAccessToken",  // Replace with actual token generation logic
+		RefreshToken: "mockRefreshToken", // Replace with actual token generation logic
+	}, nil
+}
+
+// Implement the InvalidateToken method
+func (r *TokenRepositoryImpl) InvalidateToken(token string) error {
+	// Implementation for invalidating a token
+	return nil // Replace with actual logic
 }
 
 // Create inserts a new token into the database

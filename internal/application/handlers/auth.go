@@ -102,7 +102,7 @@ func (h *AuthHandler) handleSignup(c echo.Context) error {
 	}
 
 	// Pass the Signup struct to the SignUp method
-	createdUser, err := h.UserService.SignUp(&signupRequest)
+	createdUser, err := h.UserService.SignUp(c.Request().Context(), &signupRequest)
 	if err != nil {
 		h.Logger.Error("Failed to sign up user", logging.Error(err))
 		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "Failed to create user"})

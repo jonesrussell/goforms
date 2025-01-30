@@ -4,128 +4,332 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-
-	"github.com/jmoiron/sqlx"
+	"time"
 
 	"github.com/jonesrussell/goforms/internal/application/logging"
 	"github.com/jonesrussell/goforms/internal/application/repositories/database"
 	"github.com/jonesrussell/goforms/internal/domain/common"
 )
 
-// Store defines the methods for user data access
-type Store interface {
+// Repository defines the methods for user data access
+type Repository interface {
+	SignUp(ctx context.Context, signup *Signup) (*common.User, error)
+	DeleteUser(ctx context.Context, id uint) error
+	GetByEmail(email string) (*common.User, error)
+	GetUserByID(ctx context.Context, id uint) (*common.User, error)
+	ListUsers(ctx context.Context) ([]common.User, error)
+	Login(ctx context.Context, login *Login) (*TokenPair, error)
+	Logout(ctx context.Context, token string) error
+	UpdateSubmissionStatus(ctx context.Context, id int64, status string) error
+	UpdateUser(ctx context.Context, u *common.User) error
+	IsTokenBlacklisted(token string) bool
 	Create(u *common.User) error
 	Get(id uint) (*common.User, error)
-	GetByEmail(email string) (*common.User, error)
 	Update(u *common.User) error
 	Delete(id uint) error
 	List() ([]common.User, error)
 }
 
-// StoreImpl implements the UserRepository interface
+// StoreImpl implements both Repository and TokenRepository interfaces
 type StoreImpl struct {
 	db     *database.DB
 	logger logging.Logger
 }
 
-// Create stores a new user
-func (s *StoreImpl) Create(u *common.User) error {
-	s.logger.Debug("Creating user", logging.String("email", u.Email))
-
-	// Hash the password before saving
-	if err := u.SetPassword(u.Password); err != nil {
-		s.logger.Error("Failed to set password", logging.Error(err))
-		return fmt.Errorf("failed to set password: %w", err)
+// NewRepository creates a new user repository
+func NewRepository(db *database.DB, logger logging.Logger) Repository {
+	return &StoreImpl{
+		db:     db,
+		logger: logger,
 	}
+}
 
-	_, err := s.db.Exec("INSERT INTO users (email, hashed_password, first_name, last_name, role, active) VALUES (?, ?, ?, ?, ?, ?)",
-		u.Email, u.HashedPassword, u.FirstName, u.LastName, u.Role, u.Active)
-	if err != nil {
-		s.logger.Error("Failed to create user", logging.Error(err))
-		return err
-	}
+// GenerateTokens generates access and refresh tokens for a user
+func (s *StoreImpl) GenerateTokens(user *common.User) (*TokenPair, error) {
+	// TODO: Implement actual token generation logic (e.g., using JWT)
+	accessToken := "generated_access_token"
+	refreshToken := "generated_refresh_token"
 
-	s.logger.Info("User created successfully", logging.String("email", u.Email))
+	s.logger.Debug("Tokens generated successfully", logging.String("email", user.Email))
+	return &TokenPair{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}, nil
+}
+
+// InvalidateToken invalidates a given token
+func (s *StoreImpl) InvalidateToken(token string) error {
+	// TODO: Implement actual token invalidation logic (e.g., add to blacklist)
+	s.logger.Debug("Token invalidated successfully", logging.String("token", token))
 	return nil
 }
 
-// Get retrieves a user by ID
-func (s *StoreImpl) Get(id uint) (*common.User, error) {
+// SignUp implements the Repository interface
+func (s *StoreImpl) SignUp(ctx context.Context, signup *Signup) (*common.User, error) {
+	// Hash the password before saving
+	hashedPassword, err := hashPassword(signup.Password)
+	if err != nil {
+		s.logger.Error("Failed to hash password", logging.Error(err))
+		return nil, fmt.Errorf("failed to hash password: %w", err)
+	}
+
+	newUser := &common.User{
+		Email:          signup.Email,
+		HashedPassword: hashedPassword,
+		Active:         true, // Default active status
+		CreatedAt:      time.Now(),
+		UpdatedAt:      time.Now(),
+	}
+
+	err = s.Create(newUser)
+	if err != nil {
+		return nil, fmt.Errorf("failed to sign up user: %w", err)
+	}
+
+	return newUser, nil
+}
+
+// DeleteUser implements the Repository interface
+func (s *StoreImpl) DeleteUser(ctx context.Context, id uint) error {
+	query := `DELETE FROM users WHERE id = ?`
+
+	s.logger.Debug("Deleting user", logging.Uint("id", id))
+
+	result, err := s.db.ExecContext(ctx, query, id)
+	if err != nil {
+		s.logger.Error("Failed to delete user", logging.Error(err))
+		return fmt.Errorf("failed to delete user: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		s.logger.Error("Failed to retrieve rows affected", logging.Error(err))
+		return fmt.Errorf("failed to retrieve rows affected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		s.logger.Warn("No user found to delete", logging.Uint("id", id))
+		return fmt.Errorf("user not found: %d", id)
+	}
+
+	s.logger.Info("User deleted successfully", logging.Uint("id", id))
+	return nil
+}
+
+// GetByEmail implements the Repository interface
+func (s *StoreImpl) GetByEmail(email string) (*common.User, error) {
 	query := `
-		SELECT id, email, hashed_password, created_at, updated_at
+		SELECT id, email, hashed_password, first_name, last_name, role, active, created_at, updated_at
+		FROM users
+		WHERE email = ?
+	`
+
+	s.logger.Debug("Fetching user by email", logging.String("email", email))
+
+	var user common.User
+	err := s.db.GetContext(context.Background(), &user, query, email)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			s.logger.Warn("User not found", logging.String("email", email))
+			return nil, nil // User not found
+		}
+		s.logger.Error("Failed to fetch user by email", logging.Error(err))
+		return nil, fmt.Errorf("failed to fetch user by email: %w", err)
+	}
+
+	s.logger.Debug("User fetched successfully", logging.Uint("id", user.ID), logging.String("email", user.Email))
+	return &user, nil
+}
+
+// GetUserByID implements the Repository interface
+func (s *StoreImpl) GetUserByID(ctx context.Context, id uint) (*common.User, error) {
+	query := `
+		SELECT id, email, hashed_password, first_name, last_name, role, active, created_at, updated_at
 		FROM users
 		WHERE id = ?
 	`
 
-	s.logger.Debug("Getting user by ID", logging.Uint("id", id))
+	s.logger.Debug("Fetching user by ID", logging.Uint("id", id))
 
-	var u common.User
-	if err := s.db.Get(&u, query, id); err != nil {
-		s.logger.Error("Failed to get user by ID", logging.Error(err), logging.Uint("id", id))
-		return nil, fmt.Errorf("failed to get user by ID: %w", err)
-	}
-
-	s.logger.Debug("User retrieved", logging.Uint("id", u.ID), logging.String("email", u.Email))
-	return &u, nil
-}
-
-// GetByEmail retrieves a user by email
-func (s *StoreImpl) GetByEmail(email string) (*common.User, error) {
-	s.logger.Debug("Getting user by email", logging.String("email", email))
-
-	var u common.User
-	err := s.db.Get(&u, "SELECT id, email, hashed_password, created_at, updated_at FROM users WHERE email = ?", email)
+	var user common.User
+	err := s.db.GetContext(ctx, &user, query, id)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			s.logger.Warn("User not found by email", logging.String("email", email))
-			return nil, nil // User not found, return nil
+			s.logger.Warn("User not found", logging.Uint("id", id))
+			return nil, nil // User not found
 		}
-		s.logger.Error("Failed to get user by email", logging.Error(err))
-		return nil, fmt.Errorf("failed to get user by email: %w", err)
+		s.logger.Error("Failed to fetch user by ID", logging.Error(err))
+		return nil, fmt.Errorf("failed to fetch user by ID: %w", err)
 	}
 
-	s.logger.Debug("User retrieved", logging.Uint("id", u.ID), logging.String("email", u.Email))
-	return &u, nil
+	s.logger.Debug("User fetched successfully", logging.Uint("id", user.ID), logging.String("email", user.Email))
+	return &user, nil
 }
 
-// Update modifies an existing user
-func (s *StoreImpl) Update(u *common.User) error {
+// ListUsers implements the Repository interface
+func (s *StoreImpl) ListUsers(ctx context.Context) ([]common.User, error) {
+	query := `
+		SELECT id, email, hashed_password, first_name, last_name, role, active, created_at, updated_at
+		FROM users
+		ORDER BY created_at DESC
+	`
+
+	s.logger.Debug("Listing all users")
+
+	var users []common.User
+	err := s.db.SelectContext(ctx, &users, query)
+	if err != nil {
+		s.logger.Error("Failed to list users", logging.Error(err))
+		return nil, fmt.Errorf("failed to list users: %w", err)
+	}
+
+	s.logger.Debug("Users listed successfully", logging.Int("count", len(users)))
+	return users, nil
+}
+
+// Login implements the Repository interface
+func (s *StoreImpl) Login(ctx context.Context, login *Login) (*TokenPair, error) {
+	// Implementation of user login (e.g., validate credentials and generate tokens)
+	// Placeholder implementation
+	return &TokenPair{}, nil
+}
+
+// Logout implements the Repository interface
+func (s *StoreImpl) Logout(ctx context.Context, token string) error {
+	// Implementation of user logout (e.g., invalidate token)
+	// Placeholder implementation
+	return nil
+}
+
+// UpdateSubmissionStatus implements the Repository interface
+func (s *StoreImpl) UpdateSubmissionStatus(ctx context.Context, id int64, status string) error {
+	// Implementation of updating submission status
+	// Placeholder implementation
+	return nil
+}
+
+// UpdateUser implements the Repository interface
+func (s *StoreImpl) UpdateUser(ctx context.Context, u *common.User) error {
 	query := `
 		UPDATE users
-		SET email = ?, hashed_password = ?, updated_at = NOW()
+		SET email = ?, hashed_password = ?, first_name = ?, last_name = ?, role = ?, active = ?, updated_at = NOW()
 		WHERE id = ?
 	`
 
-	s.logger.Debug("Updating user", logging.Uint("id", u.ID), logging.String("email", u.Email))
+	s.logger.Debug("Updating user", logging.Uint("id", u.ID))
 
-	err := s.db.WithTx(context.Background(), func(tx *sqlx.Tx) error {
-		result, err := tx.Exec(query, u.Email, u.Password, u.ID)
-		if err != nil {
-			return fmt.Errorf("failed to update user: %w", err)
-		}
-
-		rows, err := result.RowsAffected()
-		if err != nil {
-			return fmt.Errorf("failed to get rows affected: %w", err)
-		}
-
-		if rows == 0 {
-			return fmt.Errorf("user not found: %d", u.ID)
-		}
-
-		return nil
-	})
-
+	result, err := s.db.ExecContext(ctx, query, u.Email, u.HashedPassword, u.FirstName, u.LastName, u.Role, u.Active, u.ID)
 	if err != nil {
-		s.logger.Error("Failed to update user", logging.Error(err), logging.Uint("id", u.ID), logging.String("email", u.Email))
+		s.logger.Error("Failed to update user", logging.Error(err))
 		return fmt.Errorf("failed to update user: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		s.logger.Error("Failed to retrieve rows affected", logging.Error(err))
+		return fmt.Errorf("failed to retrieve rows affected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		s.logger.Warn("No user found to update", logging.Uint("id", u.ID))
+		return fmt.Errorf("user not found: %d", u.ID)
 	}
 
 	s.logger.Info("User updated successfully", logging.Uint("id", u.ID), logging.String("email", u.Email))
 	return nil
 }
 
-// Delete removes a user by ID
+// IsTokenBlacklisted implements the Repository interface
+func (s *StoreImpl) IsTokenBlacklisted(token string) bool {
+	// Implementation of token blacklist check
+	// Placeholder implementation
+	return false
+}
+
+// Create implements the Repository interface
+func (s *StoreImpl) Create(u *common.User) error {
+	s.logger.Debug("Creating user", logging.String("email", u.Email))
+
+	// Hash the password before saving
+	hashedPassword, err := hashPassword(u.HashedPassword)
+	if err != nil {
+		s.logger.Error("Failed to hash password", logging.Error(err))
+		return fmt.Errorf("failed to hash password: %w", err)
+	}
+	u.HashedPassword = hashedPassword
+
+	query := `
+		INSERT INTO users (email, hashed_password, first_name, last_name, role, active, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())
+	`
+
+	_, err = s.db.ExecContext(context.Background(), query, u.Email, u.HashedPassword, u.FirstName, u.LastName, u.Role, u.Active)
+	if err != nil {
+		s.logger.Error("Failed to create user", logging.Error(err))
+		return fmt.Errorf("failed to create user: %w", err)
+	}
+
+	s.logger.Info("User created successfully", logging.String("email", u.Email))
+	return nil
+}
+
+// Get implements the Repository interface
+func (s *StoreImpl) Get(id uint) (*common.User, error) {
+	query := `
+		SELECT id, email, hashed_password, first_name, last_name, role, active, created_at, updated_at
+		FROM users
+		WHERE id = ?
+	`
+
+	s.logger.Debug("Fetching user by ID", logging.Uint("id", id))
+
+	var user common.User
+	err := s.db.GetContext(context.Background(), &user, query, id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			s.logger.Warn("User not found", logging.Uint("id", id))
+			return nil, nil // User not found
+		}
+		s.logger.Error("Failed to fetch user by ID", logging.Error(err))
+		return nil, fmt.Errorf("failed to fetch user by ID: %w", err)
+	}
+
+	s.logger.Debug("User fetched successfully", logging.Uint("id", user.ID), logging.String("email", user.Email))
+	return &user, nil
+}
+
+// Update implements the Repository interface
+func (s *StoreImpl) Update(u *common.User) error {
+	query := `
+		UPDATE users
+		SET email = ?, hashed_password = ?, first_name = ?, last_name = ?, role = ?, active = ?, updated_at = NOW()
+		WHERE id = ?
+	`
+
+	s.logger.Debug("Updating user", logging.Uint("id", u.ID))
+
+	result, err := s.db.ExecContext(context.Background(), query, u.Email, u.HashedPassword, u.FirstName, u.LastName, u.Role, u.Active, u.ID)
+	if err != nil {
+		s.logger.Error("Failed to update user", logging.Error(err))
+		return fmt.Errorf("failed to update user: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		s.logger.Error("Failed to retrieve rows affected", logging.Error(err))
+		return fmt.Errorf("failed to retrieve rows affected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		s.logger.Warn("No user found to update", logging.Uint("id", u.ID))
+		return fmt.Errorf("user not found: %d", u.ID)
+	}
+
+	s.logger.Info("User updated successfully", logging.Uint("id", u.ID), logging.String("email", u.Email))
+	return nil
+}
+
+// Delete implements the Repository interface
 func (s *StoreImpl) Delete(id uint) error {
 	query := `
 		DELETE FROM users
@@ -134,49 +338,44 @@ func (s *StoreImpl) Delete(id uint) error {
 
 	s.logger.Debug("Deleting user", logging.Uint("id", id))
 
-	err := s.db.WithTx(context.Background(), func(tx *sqlx.Tx) error {
-		result, err := tx.Exec(query, id)
-		if err != nil {
-			return fmt.Errorf("failed to delete user: %w", err)
-		}
-
-		rows, err := result.RowsAffected()
-		if err != nil {
-			return fmt.Errorf("failed to get rows affected: %w", err)
-		}
-
-		if rows == 0 {
-			return fmt.Errorf("user not found: %d", id)
-		}
-
-		return nil
-	})
-
+	result, err := s.db.ExecContext(context.Background(), query, id)
 	if err != nil {
-		s.logger.Error("Failed to delete user", logging.Error(err), logging.Uint("id", id))
+		s.logger.Error("Failed to delete user", logging.Error(err))
 		return fmt.Errorf("failed to delete user: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		s.logger.Error("Failed to retrieve rows affected", logging.Error(err))
+		return fmt.Errorf("failed to retrieve rows affected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		s.logger.Warn("No user found to delete", logging.Uint("id", id))
+		return fmt.Errorf("user not found: %d", id)
 	}
 
 	s.logger.Info("User deleted successfully", logging.Uint("id", id))
 	return nil
 }
 
-// List retrieves all users
+// List implements the Repository interface
 func (s *StoreImpl) List() ([]common.User, error) {
 	query := `
-		SELECT id, email, hashed_password, created_at, updated_at
+		SELECT id, email, hashed_password, first_name, last_name, role, active, created_at, updated_at
 		FROM users
 		ORDER BY created_at DESC
 	`
 
-	s.logger.Debug("Listing users")
+	s.logger.Debug("Listing all users")
 
 	var users []common.User
-	if err := s.db.Select(&users, query); err != nil {
+	err := s.db.SelectContext(context.Background(), &users, query)
+	if err != nil {
 		s.logger.Error("Failed to list users", logging.Error(err))
 		return nil, fmt.Errorf("failed to list users: %w", err)
 	}
 
-	s.logger.Debug("Users retrieved", logging.Int("count", len(users)))
+	s.logger.Debug("Users listed successfully", logging.Int("count", len(users)))
 	return users, nil
 }

@@ -7,8 +7,10 @@ import (
 	"github.com/jonesrussell/goforms/internal/domain/user"
 )
 
-// Module combines all domain services
-var Module = fx.Options(
-	user.Module,
-	contact.Module,
-)
+// ProvideModule aggregates all domain modules.
+func ProvideModule() fx.Option {
+	return fx.Options(
+		user.ProvideModule(),    // Provide the user module
+		contact.ProvideModule(), // Provide the contact module
+	)
+}

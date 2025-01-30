@@ -71,7 +71,8 @@ func (m *MockService) GetByEmail(email string) (*common.User, error) {
 	return nil, nil // User does not exist
 }
 
-func (m *MockService) SignUp(signup *user.Signup) (*common.User, error) {
+// SignUp implements user.Service.
+func (m *MockService) SignUp(ctx context.Context, signup *user.Signup) (*common.User, error) {
 	if _, exists := m.users[signup.Email]; exists {
 		return nil, fmt.Errorf("user already exists") // Simulate user already exists
 	}

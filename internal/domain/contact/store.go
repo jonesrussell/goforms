@@ -9,22 +9,23 @@ import (
 	"github.com/jonesrussell/goforms/internal/domain/common"
 )
 
-// Store defines the interface for contact submissions.
-type Store interface {
-	Create(ctx context.Context, sub *common.Submission) error
-	Get(ctx context.Context, id int64) (*common.Submission, error)
-	List(ctx context.Context) ([]common.Submission, error)
-	UpdateStatus(ctx context.Context, id int64, status string) error
+// Repository defines the methods for contact data access.
+type Repository interface {
+	CreateSubmission(ctx context.Context, sub *common.Submission) error
+	GetSubmission(ctx context.Context, id int64) (*common.Submission, error)
+	ListSubmissions(ctx context.Context) ([]common.Submission, error)
+	UpdateSubmissionStatus(ctx context.Context, id int64, status string) error
+	// Add other necessary methods
 }
 
-// store implements the Store interface.
-type store struct {
+// StoreImpl implements the Repository interface.
+type StoreImpl struct {
 	db     *database.DB
 	logger logging.Logger
 }
 
-// Create stores a new contact form submission
-func (s *store) Create(ctx context.Context, sub *common.Submission) error {
+// CreateSubmission stores a new contact form submission
+func (s *StoreImpl) CreateSubmission(ctx context.Context, sub *common.Submission) error {
 	query := `
 		INSERT INTO contact_submissions (name, email, message, status, created_at, updated_at)
 		VALUES (?, ?, ?, ?, NOW(), NOW())
@@ -43,8 +44,8 @@ func (s *store) Create(ctx context.Context, sub *common.Submission) error {
 	return nil
 }
 
-// Get retrieves a contact form submission by ID
-func (s *store) Get(ctx context.Context, id int64) (*common.Submission, error) {
+// GetSubmission retrieves a contact form submission by ID
+func (s *StoreImpl) GetSubmission(ctx context.Context, id int64) (*common.Submission, error) {
 	query := `
 		SELECT id, name, email, message, status, created_at, updated_at
 		FROM contact_submissions
@@ -62,8 +63,8 @@ func (s *store) Get(ctx context.Context, id int64) (*common.Submission, error) {
 	return &submission, nil
 }
 
-// List retrieves all contact form submissions
-func (s *store) List(ctx context.Context) ([]common.Submission, error) {
+// ListSubmissions retrieves all contact form submissions
+func (s *StoreImpl) ListSubmissions(ctx context.Context) ([]common.Submission, error) {
 	query := `
 		SELECT id, name, email, message, status, created_at, updated_at
 		FROM contact_submissions
@@ -81,8 +82,8 @@ func (s *store) List(ctx context.Context) ([]common.Submission, error) {
 	return submissions, nil
 }
 
-// UpdateStatus updates the status of a contact form submission
-func (s *store) UpdateStatus(ctx context.Context, id int64, status string) error {
+// UpdateSubmissionStatus updates the status of a contact form submission
+func (s *StoreImpl) UpdateSubmissionStatus(ctx context.Context, id int64, status string) error {
 	query := `
 		UPDATE contact_submissions
 		SET status = ?, updated_at = NOW()
@@ -107,4 +108,12 @@ func (s *store) UpdateStatus(ctx context.Context, id int64, status string) error
 	}
 
 	return nil
+}
+
+// NewRepository creates a new contact repository
+func NewRepository(db *database.DB, logger logging.Logger) Repository {
+	return &StoreImpl{
+		db:     db,
+		logger: logger,
+	}
 }

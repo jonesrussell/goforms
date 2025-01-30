@@ -26,7 +26,7 @@ func (m *MockService) GetByEmail(email string) (*common.User, error) {
 	return &common.User{Email: email}, nil
 }
 
-func (m *MockService) SignUp(signupRequest *Signup) (*common.User, error) {
+func (m *MockService) SignUp(ctx context.Context, signupRequest *Signup) (*common.User, error) {
 	return &common.User{Email: signupRequest.Email}, nil
 }
 

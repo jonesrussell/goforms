@@ -1,19 +1,7 @@
 package contact
 
 import (
-	"errors"
 	"time"
-)
-
-var (
-	// ErrNameRequired indicates that the name field is required
-	ErrNameRequired = errors.New("name is required")
-	// ErrEmailRequired indicates that the email field is required
-	ErrEmailRequired = errors.New("email is required")
-	// ErrMessageRequired indicates that the message field is required
-	ErrMessageRequired = errors.New("message is required")
-	// ErrInvalidStatus indicates that the status is invalid
-	ErrInvalidStatus = errors.New("invalid status")
 )
 
 // Status represents the status of a contact form submission

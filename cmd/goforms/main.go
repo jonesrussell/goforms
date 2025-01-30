@@ -10,54 +10,35 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxevent"
 
-	"github.com/jonesrussell/goforms/internal/application"
 	"github.com/jonesrussell/goforms/internal/application/config"
+	"github.com/jonesrussell/goforms/internal/application/database"
 	"github.com/jonesrussell/goforms/internal/application/handlers"
 	"github.com/jonesrussell/goforms/internal/application/logging"
-	"github.com/jonesrussell/goforms/internal/application/repositories"
 	"github.com/jonesrussell/goforms/internal/application/router"
 	"github.com/jonesrussell/goforms/internal/application/view"
-	"github.com/jonesrussell/goforms/internal/domain"
 	"github.com/jonesrussell/goforms/internal/domain/contact"
 	"github.com/jonesrussell/goforms/internal/domain/user"
 )
 
-//nolint:gochecknoglobals // These variables are populated by -ldflags at build time
-var (
-	version   = "dev"
-	buildTime = "unknown"
-	gitCommit = "unknown"
-	goVersion = "unknown"
-)
-
 func main() {
 	app := fx.New(
+		// Config
+		config.Module,
+
+		// Logging
 		logging.Module,
 		fx.WithLogger(func(log logging.Logger) fxevent.Logger {
 			return &logging.FxEventLogger{Logger: log}
 		}),
-		fx.Provide(
-			func() handlers.VersionInfo {
-				return createVersionInfo()
-			},
-			func() *echo.Echo {
-				return echo.New()
-			},
-			func() *view.Renderer {
-				return view.NewRenderer()
-			},
-			user.NewService,
-			user.NewUserRepository,
-			user.NewTokenRepository,
-			// Remove contact.NewService if it's already provided in the contact module
-			// contact.NewService,
-		),
-		config.Module,
-		domain.Module,
-		application.Module,
-		repositories.Module,
-		user.Module,
-		contact.Module, // Ensure the contact module is included here
+
+		// Database
+		database.Module,
+
+		// Provide domain modules
+		user.ProvideModule(),
+		contact.ProvideModule(),
+
+		// Invoke the server
 		fx.Invoke(startAppAndServer),
 	)
 
@@ -92,8 +73,6 @@ func startAppAndServer(lc fx.Lifecycle, p ServerParams, logger logging.Logger) {
 			logger.Info("Starting server",
 				logging.String("addr", addr),
 				logging.String("env", p.Config.App.Env),
-				logging.String("version", version),
-				logging.String("gitCommit", gitCommit),
 			)
 
 			return p.Echo.Start(addr)
@@ -109,15 +88,7 @@ func loadEnvironment() {
 	log.Println("Loading environment")
 	if err := godotenv.Load(); err != nil {
 		log.Printf("Warning: Error loading .env file: %v\n", err)
-	}
-}
-
-func createVersionInfo() handlers.VersionInfo {
-	return handlers.VersionInfo{
-		Version:   version,
-		BuildTime: buildTime,
-		GitCommit: gitCommit,
-		GoVersion: goVersion,
+		return // Handle the error without panicking
 	}
 }
 

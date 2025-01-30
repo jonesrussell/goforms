@@ -11,7 +11,7 @@ import (
 type Config struct {
 	Logger      logging.Logger
 	JWTSecret   string
-	UserService *user.Service
+	UserService user.Service
 	EnableCSRF  bool
 }
 
@@ -26,7 +26,8 @@ func Setup(e *echo.Echo, cfg *Config) {
 
 	// Auth if secret provided
 	if cfg.JWTSecret != "" && cfg.UserService != nil {
-		e.Use(NewJWTMiddleware(*cfg.UserService, cfg.JWTSecret))
+		userService := cfg.UserService
+		e.Use(NewJWTMiddleware(userService, cfg.JWTSecret))
 	}
 
 	// CSRF if enabled
