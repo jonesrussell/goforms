@@ -37,12 +37,21 @@ func (m *MockService) ListUsers(ctx context.Context) ([]common.User, error) {
 
 // Login implements user.Service.
 func (m *MockService) Login(ctx context.Context, login *user.Login) (*user.TokenPair, error) {
-	panic("unimplemented")
+	// Simulate a successful login for a specific u
+	if _, exists := m.users[login.Email]; exists {
+		// Return a mock token pair
+		return &user.TokenPair{
+			AccessToken:  "mockAccessToken",
+			RefreshToken: "mockRefreshToken",
+		}, nil
+	}
+	return nil, fmt.Errorf("invalid credentials") // Simulate invalid credentials
 }
 
 // Logout implements user.Service.
 func (m *MockService) Logout(ctx context.Context, token string) error {
-	panic("unimplemented")
+	// Simulate successful logout
+	return nil
 }
 
 // UpdateSubmissionStatus implements user.Service.
@@ -140,8 +149,26 @@ func TestAuthHandler_handleSignup(t *testing.T) {
 }
 
 func TestAuthHandler_handleLogin(t *testing.T) {
-	mockLogger := &utils.MockLogger{}
-	mockUserService := &user.MockService{}
+	mockLogger := &utils.MockLogger{
+		DebugFunc: func(msg string, fields ...interface{}) {
+			fmt.Printf("DEBUG: %s %v\n", msg, fields)
+		},
+		ErrorFunc: func(msg string, fields ...logging.Field) {
+			fmt.Printf("ERROR: %s %v\n", msg, fields)
+		},
+		SyncFunc: func() error {
+			return nil // Mock Sync behavior
+		},
+	}
+
+	mockUserService := &MockService{
+		users: map[string]*common.User{
+			"uniqueuser@example.com": {
+				Email: "uniqueuser@example.com",
+				// Add other fields as necessary
+			},
+		},
+	}
 	handler := NewAuthHandler(mockLogger, mockUserService)
 
 	loginInput := map[string]string{
@@ -165,8 +192,21 @@ func TestAuthHandler_handleLogin(t *testing.T) {
 }
 
 func TestAuthHandler_handleLogout(t *testing.T) {
-	mockLogger := &utils.MockLogger{}
-	mockUserService := &user.MockService{}
+	mockLogger := &utils.MockLogger{
+		DebugFunc: func(msg string, fields ...interface{}) {
+			fmt.Printf("DEBUG: %s %v\n", msg, fields)
+		},
+		ErrorFunc: func(msg string, fields ...logging.Field) {
+			fmt.Printf("ERROR: %s %v\n", msg, fields)
+		},
+		SyncFunc: func() error {
+			return nil // Mock Sync behavior
+		},
+	}
+
+	mockUserService := &MockService{
+		users: make(map[string]*common.User), // Ensure this is initialized
+	}
 	handler := NewAuthHandler(mockLogger, mockUserService)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/logout", nil)

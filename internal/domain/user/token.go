@@ -6,3 +6,9 @@ type Token struct {
 	UserID string // ID of the user associated with the token
 	Value  string // The actual token value
 }
+
+// TokenPair represents a pair of access and refresh tokens.
+type TokenPair struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+}

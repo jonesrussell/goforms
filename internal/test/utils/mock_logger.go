@@ -66,3 +66,5 @@ func (m *MockLogger) WithPrefix(prefix string) logging.Logger {
 	}
 	return m
 }
+
+// Implement the methods as needed

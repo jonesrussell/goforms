@@ -24,12 +24,6 @@ type Login struct {
 	Password string `json:"password" validate:"required,min=8"`
 }
 
-// TokenPair represents a pair of tokens for authentication
-type TokenPair struct {
-	AccessToken  string `json:"access_token" db:"access_token"`
-	RefreshToken string `json:"refresh_token" db:"refresh_token"`
-}
-
 // ConvertSignupToUser converts a Signup struct to a User struct
 func ConvertSignupToUser(signup *Signup) *common.User {
 	return &common.User{

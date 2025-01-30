@@ -31,11 +31,9 @@ var (
 	goVersion = "unknown"
 )
 
-var appLogger logging.Logger
-
 func main() {
-	cfg := loggingconfig.NewConfig()   // Create the logging configuration
-	appLogger = logging.NewLogger(cfg) // Initialize your logger with the configuration
+	cfg := loggingconfig.NewConfig()    // Create the logging configuration
+	appLogger := logging.NewLogger(cfg) // Initialize your logger with the configuration
 
 	defer func() {
 		if err := appLogger.Sync(); err != nil {
@@ -43,15 +41,15 @@ func main() {
 		}
 	}()
 
-	if err := run(); err != nil {
+	if err := run(appLogger); err != nil {
 		appLogger.Fatal("Application failed to start", logging.Error(err)) // Use logging package for error
 	}
 }
 
-func run() error {
+func run(logger logging.Logger) error {
 	loadEnvironment()
 	versionInfo := createVersionInfo()
-	app := createApp(versionInfo)
+	app := createApp(versionInfo, logger)
 	return startApp(app)
 }
 
@@ -70,7 +68,7 @@ func createVersionInfo() handlers.VersionInfo {
 	}
 }
 
-func createApp(versionInfo handlers.VersionInfo) *fx.App {
+func createApp(versionInfo handlers.VersionInfo, logger logging.Logger) *fx.App {
 	return fx.New(
 		fx.Provide(
 			func() handlers.VersionInfo {
@@ -95,7 +93,9 @@ func createApp(versionInfo handlers.VersionInfo) *fx.App {
 		fx.WithLogger(func(log logging.Logger) fxevent.Logger {
 			return &logging.FxEventLogger{Logger: log}
 		}),
-		fx.Invoke(startServer),
+		fx.Invoke(func(p ServerParams) error {
+			return startServer(p, logger)
+		}),
 	)
 }
 
@@ -124,8 +124,8 @@ type ServerParams struct {
 	Handlers       []handlers.Handler `group:"handlers"`
 }
 
-func startServer(p ServerParams) error {
-	appLogger.Debug("starting server with handlers", logging.Int("handler_count", len(p.Handlers)))
+func startServer(p ServerParams, logger logging.Logger) error {
+	logger.Debug("starting server with handlers", logging.Int("handler_count", len(p.Handlers)))
 
 	for _, handler := range p.Handlers {
 		handler.Register(p.Echo)
@@ -145,7 +145,7 @@ func startServer(p ServerParams) error {
 		addr = fmt.Sprintf("%s:8090", p.Config.Server.Host)
 	}
 
-	appLogger.Info("Starting server",
+	logger.Info("Starting server",
 		logging.String("addr", addr),
 		logging.String("env", p.Config.App.Env),
 		logging.String("version", version),
