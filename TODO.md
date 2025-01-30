@@ -2,19 +2,6 @@
 
 ## In Progress
 
-- [ ] Contact Form Demo
-  - [x] Basic Form Implementation
-  - [x] API Response Display
-  - [x] Message History Display
-  - [ ] Form Validation
-  - [ ] Error Handling Improvements
-  - [ ] Loading States
-  - [ ] Success Feedback
-  - [ ] Message Filtering
-  - [ ] Message Sorting Options
-  - [ ] Responsive Design
-  - [ ] Accessibility Improvements
-
 - [ ] Dependency Injection Improvements
   - [x] Logger Consistency
     - [x] Consolidate logger initialization
@@ -32,6 +19,46 @@
     - [ ] Audit handler constructors
     - [ ] Ensure consistent DI usage
     - [ ] Document dependency requirements
+
+
+- [ ] How it Works
+  - [ ] API Response Display
+  - [ ] Message History Display
+  - [ ] Form Validation
+  - [ ] Error Handling Improvements
+  - [ ] Loading States
+  - [ ] Success Feedback
+  - [ ] Message Filtering
+  - [ ] Message Sorting Options
+  - [ ] Responsive Design
+  - [ ] Accessibility Improvements
+
+## Completed
+
+- [x] How it Works
+  - [x] Basic Form Implementation
+  - [x] API Response Display
+  - [x] Message History Display
+  - [x] Form Validation
+  - [x] Error Handling Improvements
+  - [x] Loading States
+  - [x] Success Feedback
+  - [x] Message Filtering
+  - [x] Message Sorting Options
+  - [x] Responsive Design
+  - [x] Accessibility Improvements
+
+## Upcoming
+
+- [ ] How it Works
+  - [ ] Form Validation
+  - [ ] Error Handling Improvements
+  - [ ] Loading States
+  - [ ] Success Feedback
+  - [ ] Message Filtering
+  - [ ] Message Sorting Options
+  - [ ] Responsive Design
+  - [ ] Accessibility Improvements
 
 - [ ] Security
   - [ ] Authentication System
@@ -65,8 +92,6 @@
     - [ ] Component Overview
     - [ ] Data Flow Diagrams
     - [ ] Design Decisions
-
-## Upcoming
 
 - [ ] Form Management System
   - [ ] Form Schema Implementation
@@ -143,7 +168,7 @@
     - [ ] Document package interfaces
     - [ ] Add usage examples
 
-- [] Testing Infrastructure
+- [ ] Testing Infrastructure
   - [ ] Mock Cleanup
     - [ ] Fix Directory Structure
       - [ ] Remove duplicate contact store implementations:
@@ -184,38 +209,15 @@
       - [ ] Add godoc comments for all exported types/methods
       - [ ] Add usage examples in README.md
 
-## Completed
-
-- [x] Core Domain Implementation
-  - [x] Contact Submissions
-    - [x] CRUD Operations
-    - [x] Status Management
-    - [x] Input Validation
-    - [x] Unit Tests
-  - [x] Email Subscriptions
-    - [x] CRUD Operations
-    - [x] Status Management
-    - [x] Input Validation
-    - [x] Unit Tests
-- [x] API Implementation
-  - [x] RESTful Endpoints
-  - [x] Standardized Response Format
-  - [x] Error Handling
-  - [x] Input Validation
-  - [x] Unit Tests
-- [x] Testing Infrastructure
-  - [x] Mock Implementations
-  - [x] Test Utilities
-  - [x] Assertion Helpers
-  - [x] Test Setup Utilities
-- [x] Development Environment
-  - [x] Dev Container Setup
-  - [x] Task Automation
-  - [x] Hot Reload
-- [x] Security
-  - [x] Authentication System
-    - [x] User Model & Migration
-    - [x] JWT Token Implementation
-    - [x] Login Endpoint
-    - [x] Signup Endpoint
-    - [x] Middleware Protection
+- [ ] Contact Us Page
+  - [ ] Form Implementation
+    - [ ] Input Fields (Name, Email, Message)
+    - [ ] Validation Rules
+    - [ ] Submission Handling
+  - [ ] API Endpoint
+    - [ ] Create Contact Submission Endpoint
+    - [ ] Handle Form Data
+    - [ ] Return Success/Error Responses
+  - [ ] UI Design
+    - [ ] Responsive Layout
+    - [ ] User Feedback on Submission
