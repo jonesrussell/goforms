@@ -3,8 +3,9 @@ package user
 import (
 	"time"
 
-	"github.com/jonesrussell/goforms/internal/application/logging"
 	"golang.org/x/crypto/bcrypt"
+
+	"github.com/jonesrussell/goforms/internal/application/logging"
 )
 
 // User represents a user in the system
@@ -12,6 +13,7 @@ type User struct {
 	ID             uint      `json:"id" db:"id"`
 	Email          string    `json:"email" db:"email"`
 	HashedPassword string    `json:"-" db:"hashed_password"`
+	Password       string    `json:"-"`
 	FirstName      *string   `json:"first_name" db:"first_name"`
 	LastName       *string   `json:"last_name" db:"last_name"`
 	Role           string    `json:"role" db:"role"`
@@ -63,15 +65,15 @@ type Login struct {
 
 // TokenPair represents a pair of tokens for authentication
 type TokenPair struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
+	AccessToken  string `json:"access_token" db:"access_token"`
+	RefreshToken string `json:"refresh_token" db:"refresh_token"`
 }
 
 // ConvertSignupToUser converts a Signup struct to a User struct
 func ConvertSignupToUser(signup *Signup) *User {
 	return &User{
-		Email:          signup.Email,
-		HashedPassword: "", // Set this later after hashing
+		Email:    signup.Email,
+		Password: "", // Set this later after hashing
 		// FirstName:      signup.FirstName,
 		// LastName:       signup.LastName,
 		Role:   "user", // Set a default role or modify as needed

@@ -50,14 +50,14 @@ tasks:
     desc: Run tests excluding templates and components
     deps: [generate]
     cmds:
-      - go test -v ./internal/... -exclude internal/presentation/templates/... -exclude internal/presentation/components/...
+      - go test -v ./internal/... -test.skip internal/presentation/templates/... -test.skip internal/presentation/components/...
 
   test:cover:
     desc: Run tests with coverage excluding templates and components
     deps: [generate]
     cmds:
       - mkdir -p coverage
-      - go test -v -race -coverprofile=coverage/coverage.out -covermode=atomic ./internal/... -exclude internal/presentation/templates/... -exclude internal/presentation/components/...
+      - go test -v -race -coverprofile=coverage/coverage.out -covermode=atomic ./internal/... -test.skip internal/presentation/templates/... -test.skip internal/presentation/components/...
       - go tool cover -html=coverage/coverage.out -o coverage/coverage.html
       - go tool cover -func=coverage/coverage.out
     generates:

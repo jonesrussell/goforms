@@ -37,7 +37,8 @@ func (s *store) Create(user *User) error {
 		return err
 	}
 
-	_, err := s.db.Exec("INSERT INTO users (email, hashed_password) VALUES (?, ?)", user.Email, user.HashedPassword)
+	_, err := s.db.Exec("INSERT INTO users (email, hashed_password, first_name, last_name, role, active) VALUES (?, ?, ?, ?, ?, ?)",
+		user.Email, user.HashedPassword, user.FirstName, user.LastName, user.Role, user.Active)
 	if err != nil {
 		s.logger.Error("Failed to create user", logging.Error(err))
 		return err
@@ -72,7 +73,7 @@ func (s *store) GetByEmail(email string) (*User, error) {
 	s.logger.Debug("Getting user by email", logging.String("email", email))
 
 	var user User
-	err := s.db.Get(&user, "SELECT * FROM users WHERE email = ?", email)
+	err := s.db.Get(&user, "SELECT id, email, hashed_password, created_at, updated_at FROM users WHERE email = ?", email)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			s.logger.Warn("User not found by email", logging.String("email", email))
@@ -97,7 +98,7 @@ func (s *store) Update(user *User) error {
 	s.logger.Debug("Updating user", logging.Uint("id", user.ID), logging.String("email", user.Email))
 
 	err := s.db.WithTx(context.Background(), func(tx *sqlx.Tx) error {
-		result, err := tx.Exec(query, user.Email, user.HashedPassword, user.ID)
+		result, err := tx.Exec(query, user.Email, user.Password, user.ID)
 		if err != nil {
 			return fmt.Errorf("failed to update user: %w", err)
 		}

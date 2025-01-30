@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
+	"github.com/dgrijalva/jwt-go" // Ensure this is present
 
 	"github.com/jonesrussell/goforms/internal/application/logging"
 )
@@ -69,7 +72,7 @@ func (s *ServiceImpl) SignUp(signup *Signup) (*User, error) {
 	}
 
 	s.logger.Debug("User created successfully", logging.Any("user", user))
-	return user, nil // Return the created user and nil error
+	return user, nil // Return the created user
 }
 
 func (s *ServiceImpl) GetUserByID(ctx context.Context, id uint) (*User, error) {
@@ -113,40 +116,48 @@ func (s *ServiceImpl) GetByEmail(email string) (*User, error) {
 func (s *ServiceImpl) Login(ctx context.Context, login *Login) (*TokenPair, error) {
 	user, err := s.repo.GetByEmail(login.Email)
 	if err != nil {
-		return nil, fmt.Errorf("failed to authenticate user: %w", err)
+		return nil, err // Handle error
 	}
 	if user == nil || !user.CheckPassword(login.Password) {
 		return nil, fmt.Errorf("invalid credentials")
 	}
 
-	// Generate tokens using a secure method
-	accessToken, err := s.generateAccessToken(user)
+	// Proceed with token generation
+	return s.generateTokens(user) // Call the generateTokens function
+}
+
+// generateTokens generates access and refresh tokens for the user
+func (s *ServiceImpl) generateTokens(user *User) (*TokenPair, error) {
+	// Example secret key for signing tokens (use a secure method to manage secrets)
+	secretKey := []byte("your_secret_key")
+
+	// Generate Access Token
+	accessTokenClaims := jwt.MapClaims{
+		"email": user.Email,
+		"role":  user.Role,
+		"exp":   time.Now().Add(time.Hour * 1).Unix(), // Token expires in 1 hour
+	}
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessTokenClaims)
+	signedAccessToken, err := accessToken.SignedString(secretKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate access token: %w", err)
 	}
 
-	refreshToken, err := s.generateRefreshToken(user)
+	// Generate Refresh Token
+	refreshTokenClaims := jwt.MapClaims{
+		"email": user.Email,
+		"exp":   time.Now().Add(time.Hour * 24 * 7).Unix(), // Token expires in 7 days
+	}
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshTokenClaims)
+	signedRefreshToken, err := refreshToken.SignedString(secretKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate refresh token: %w", err)
 	}
 
-	tokens := &TokenPair{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-	}
-
-	return tokens, nil
-}
-
-// New methods for token generation
-func (s *ServiceImpl) generateAccessToken(user *User) (string, error) {
-	// Example logic to generate an access token using user information
-	return fmt.Sprintf("access-token-for-%s", user.Email), nil // Replace with actual token generation logic
-}
-
-func (s *ServiceImpl) generateRefreshToken(user *User) (string, error) {
-	// Example logic to generate a refresh token using user information
-	return fmt.Sprintf("refresh-token-for-%s", user.Email), nil // Replace with actual token generation logic
+	return &TokenPair{
+		AccessToken:  signedAccessToken,
+		RefreshToken: signedRefreshToken,
+	}, nil
 }
 
 // Logout invalidates the user's token
