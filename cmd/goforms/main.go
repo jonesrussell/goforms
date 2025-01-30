@@ -63,8 +63,18 @@ func createApp(versionInfo handlers.VersionInfo) *fx.App {
 		application.Module,
 		repositories.Module,
 		user.Module,
-		fx.Provide(newServer),
 		fx.Provide(func() handlers.VersionInfo { return versionInfo }),
+		fx.Provide(user.NewService),
+		fx.Provide(user.NewUserRepository),
+		fx.Provide(user.NewTokenRepository),
+		fx.Provide(newServer),
+		fx.Provide(func(logger logging.Logger, userService user.Service) *handlers.AuthHandler {
+			return handlers.NewAuthHandler(logger, userService)
+		}),
+		fx.Provide(func(logger logging.Logger) *handlers.WebHandler {
+			return handlers.NewWebHandler(logger)
+		}),
+		fx.Invoke(startServer),
 	)
 }
 
@@ -90,23 +100,23 @@ func newServer(userService user.Service) *echo.Echo {
 type ServerParams struct {
 	fx.In
 
-	Echo     *echo.Echo
-	Config   *config.Config
-	Logger   logging.Logger
-	Handlers []handlers.Handler `group:"handlers"`
+	Echo        *echo.Echo
+	Config      *config.Config
+	Logger      logging.Logger
+	AuthHandler *handlers.AuthHandler
+	WebHandler  *handlers.WebHandler
 }
 
 func startServer(p ServerParams) error {
 	p.Logger.Debug("starting server with handlers",
-		logging.Int("handler_count", len(p.Handlers)),
+		logging.Int("handler_count", 2),
 	)
 
-	for _, h := range p.Handlers {
-		h.Register(p.Echo)
-	}
+	p.AuthHandler.Register(p.Echo)
+	p.WebHandler.Register(p.Echo)
 
 	router.Setup(p.Echo, &router.Config{
-		Handlers: p.Handlers,
+		Handlers: []handlers.Handler{p.AuthHandler, p.WebHandler},
 		Static: router.StaticConfig{
 			Path: "/static",
 			Root: "static",
