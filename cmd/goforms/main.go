@@ -13,7 +13,6 @@ import (
 	"github.com/jonesrussell/goforms/internal/application/config"
 	"github.com/jonesrussell/goforms/internal/application/handlers"
 	"github.com/jonesrussell/goforms/internal/application/logging"
-	"github.com/jonesrussell/goforms/internal/application/loggingconfig"
 	"github.com/jonesrussell/goforms/internal/application/repositories"
 	"github.com/jonesrussell/goforms/internal/application/view"
 	"github.com/jonesrussell/goforms/internal/domain"
@@ -31,14 +30,15 @@ var (
 
 func main() {
 	app := fx.New(
+		logging.Module,
+		fx.WithLogger(func(log logging.Logger) fxevent.Logger {
+			return &logging.FxEventLogger{Logger: log}
+		}),
 		fx.Provide(
-			loggingconfig.NewConfig,
-			logging.NewLogger,
 			func() handlers.VersionInfo {
 				return createVersionInfo()
 			},
 		),
-		logging.Module,
 		config.Module,
 		domain.Module,
 		application.Module,
@@ -49,13 +49,6 @@ func main() {
 			user.NewUserRepository,
 			user.NewTokenRepository,
 		),
-		fx.Provide(
-			fx.Annotate(func(h *handlers.AuthHandler) handlers.Handler { return h }, fx.As(new(handlers.Handler))),
-			fx.Annotate(func(h *handlers.WebHandler) handlers.Handler { return h }, fx.As(new(handlers.Handler))),
-		),
-		fx.WithLogger(func(log logging.Logger) fxevent.Logger {
-			return &logging.FxEventLogger{Logger: log}
-		}),
 		fx.Invoke(startApp),
 	)
 

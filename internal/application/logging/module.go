@@ -13,12 +13,13 @@ import (
 // Declare logInstance at the package level
 var logInstance Logger // Declare logInstance
 
-// Module provides the logging dependencies
-var Module = fx.Module("logging",
+// Module provides logging-related dependencies.
+var Module = fx.Options(
 	fx.Provide(
-		NewLogger,   // Provide the logger based on the environment
-		NewFactory,  // Provide the logger factory
-		NewFxLogger, // Provide the fx logger
+		loggingconfig.NewConfig, // Ensure this is only provided once
+		NewLogger,
+		NewFactory, // Added Factory to provide logger creation capabilities
+		NewFxLogger,
 	),
 )
 
