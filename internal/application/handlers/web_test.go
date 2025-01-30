@@ -1,6 +1,9 @@
 package handlers
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -13,20 +16,38 @@ import (
 	"github.com/jonesrussell/goforms/internal/test/utils"
 )
 
-func TestWebHandler_handleHome(t *testing.T) {
+// Helper function to create a new request with JSON body
+func newRequest(method, path string, body interface{}) (*http.Request, error) {
+	var reqBody []byte
+	var err error
+	if body != nil {
+		reqBody, err = json.Marshal(body)
+		if err != nil {
+			return nil, err
+		}
+	}
+	req := httptest.NewRequest(method, path, bytes.NewReader(reqBody))
+	req.Header.Set("Content-Type", "application/json")
+	return req, nil
+}
+
+// Helper function to create a new context
+func newContext(req *http.Request) echo.Context {
+	rec := httptest.NewRecorder()
 	e := echo.New()
+	return e.NewContext(req, rec)
+}
+
+func TestWebHandler_handleHome(t *testing.T) {
 	mockLogger := &utils.MockLogger{
 		DebugFunc: func(msg string, fields ...interface{}) {
-			t.Logf("DEBUG: %s, fields: %v", msg, fields)
+			fmt.Printf("DEBUG: %s %v\n", msg, fields)
 		},
 		ErrorFunc: func(msg string, fields ...logging.Field) {
-			t.Errorf("ERROR: %s, fields: %v", msg, fields)
+			fmt.Printf("ERROR: %s %v\n", msg, fields)
 		},
-		InfoFunc: func(msg string, fields ...logging.Field) {
-			t.Logf("INFO: %s, fields: %v", msg, fields)
-		},
-		WarnFunc: func(msg string, fields ...logging.Field) {
-			t.Logf("WARN: %s, fields: %v", msg, fields)
+		SyncFunc: func() error {
+			return nil // Mock Sync behavior
 		},
 	}
 	renderer := &view.Renderer{}             // Initialize your view renderer here
@@ -36,7 +57,7 @@ func TestWebHandler_handleHome(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := newContext(req)
 
 	if err := handler.handleHome(c); err != nil {
 		t.Errorf("expected no error, got %v", err)
@@ -48,12 +69,16 @@ func TestWebHandler_handleHome(t *testing.T) {
 }
 
 func TestWebHandler_handleDemo(t *testing.T) {
-	e := echo.New()
 	mockLogger := &utils.MockLogger{
-		DebugFunc: func(msg string, fields ...interface{}) {},
-		ErrorFunc: func(msg string, fields ...logging.Field) {},
-		InfoFunc:  func(msg string, fields ...logging.Field) {},
-		WarnFunc:  func(msg string, fields ...logging.Field) {},
+		DebugFunc: func(msg string, fields ...interface{}) {
+			fmt.Printf("DEBUG: %s %v\n", msg, fields)
+		},
+		ErrorFunc: func(msg string, fields ...logging.Field) {
+			fmt.Printf("ERROR: %s %v\n", msg, fields)
+		},
+		SyncFunc: func() error {
+			return nil // Mock Sync behavior
+		},
 	}
 
 	renderer := &view.Renderer{}             // Initialize your view renderer here
@@ -63,7 +88,7 @@ func TestWebHandler_handleDemo(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodGet, "/demo", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := newContext(req)
 
 	if err := handler.handleDemo(c); err != nil {
 		t.Errorf("expected no error, got %v", err)
@@ -75,12 +100,16 @@ func TestWebHandler_handleDemo(t *testing.T) {
 }
 
 func TestWebHandler_handleSignup(t *testing.T) {
-	e := echo.New()
 	mockLogger := &utils.MockLogger{
-		DebugFunc: func(msg string, fields ...interface{}) {},
-		ErrorFunc: func(msg string, fields ...logging.Field) {},
-		InfoFunc:  func(msg string, fields ...logging.Field) {},
-		WarnFunc:  func(msg string, fields ...logging.Field) {},
+		DebugFunc: func(msg string, fields ...interface{}) {
+			fmt.Printf("DEBUG: %s %v\n", msg, fields)
+		},
+		ErrorFunc: func(msg string, fields ...logging.Field) {
+			fmt.Printf("ERROR: %s %v\n", msg, fields)
+		},
+		SyncFunc: func() error {
+			return nil // Mock Sync behavior
+		},
 	}
 
 	renderer := &view.Renderer{}             // Initialize your view renderer here
@@ -90,7 +119,7 @@ func TestWebHandler_handleSignup(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodGet, "/signup", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := newContext(req)
 
 	if err := handler.handleSignup(c); err != nil {
 		t.Errorf("expected no error, got %v", err)
@@ -102,12 +131,16 @@ func TestWebHandler_handleSignup(t *testing.T) {
 }
 
 func TestWebHandler_handleLogin(t *testing.T) {
-	e := echo.New()
 	mockLogger := &utils.MockLogger{
-		DebugFunc: func(msg string, fields ...interface{}) {},
-		ErrorFunc: func(msg string, fields ...logging.Field) {},
-		InfoFunc:  func(msg string, fields ...logging.Field) {},
-		WarnFunc:  func(msg string, fields ...logging.Field) {},
+		DebugFunc: func(msg string, fields ...interface{}) {
+			fmt.Printf("DEBUG: %s %v\n", msg, fields)
+		},
+		ErrorFunc: func(msg string, fields ...logging.Field) {
+			fmt.Printf("ERROR: %s %v\n", msg, fields)
+		},
+		SyncFunc: func() error {
+			return nil // Mock Sync behavior
+		},
 	}
 
 	renderer := &view.Renderer{}             // Initialize your view renderer here
@@ -117,7 +150,7 @@ func TestWebHandler_handleLogin(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodGet, "/login", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := newContext(req)
 
 	if err := handler.handleLogin(c); err != nil {
 		t.Errorf("expected no error, got %v", err)

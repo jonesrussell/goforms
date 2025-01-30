@@ -1,9 +1,7 @@
 package handlers
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -16,21 +14,6 @@ import (
 	"github.com/jonesrussell/goforms/internal/domain/user"
 	"github.com/jonesrussell/goforms/internal/test/utils"
 )
-
-// Helper function to create a new request with JSON body
-func newRequest(method, path string, body interface{}) (*http.Request, error) {
-	var reqBody []byte
-	var err error
-	if body != nil {
-		reqBody, err = json.Marshal(body)
-		if err != nil {
-			return nil, err
-		}
-	}
-	req := httptest.NewRequest(method, path, bytes.NewReader(reqBody))
-	req.Header.Set("Content-Type", "application/json")
-	return req, nil
-}
 
 // Helper function to create a new context
 func newContext(req *http.Request) echo.Context {
@@ -109,7 +92,6 @@ func (m *MockService) DeleteUser(ctx context.Context, userID uint) error {
 }
 
 func TestAuthHandler_handleSignup(t *testing.T) {
-	// Arrange
 	mockLogger := &utils.MockLogger{
 		DebugFunc: func(msg string, fields ...interface{}) {
 			fmt.Printf("DEBUG: %s %v\n", msg, fields)
@@ -117,7 +99,11 @@ func TestAuthHandler_handleSignup(t *testing.T) {
 		ErrorFunc: func(msg string, fields ...logging.Field) {
 			fmt.Printf("ERROR: %s %v\n", msg, fields)
 		},
+		SyncFunc: func() error {
+			return nil // Mock Sync behavior
+		},
 	}
+
 	mockUserService := &MockService{users: make(map[string]*common.User)}
 	handler := NewAuthHandler(mockLogger, mockUserService)
 
