@@ -9,11 +9,13 @@ import (
 	"github.com/labstack/echo/v4"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxevent"
+	"go.uber.org/zap"
 
 	"github.com/jonesrussell/goforms/internal/application"
 	"github.com/jonesrussell/goforms/internal/application/config"
 	"github.com/jonesrussell/goforms/internal/application/handlers"
 	"github.com/jonesrussell/goforms/internal/application/logging"
+	"github.com/jonesrussell/goforms/internal/application/loggingconfig"
 	"github.com/jonesrussell/goforms/internal/application/repositories"
 	"github.com/jonesrussell/goforms/internal/application/router"
 	"github.com/jonesrussell/goforms/internal/application/view"
@@ -30,9 +32,15 @@ var (
 	goVersion = "unknown"
 )
 
+var appLogger logging.Logger
+
 func main() {
+	cfg := loggingconfig.NewConfig()
+	appLogger = logging.NewLogger(cfg)
+	defer appLogger.Sync()
+
 	if err := run(); err != nil {
-		log.Fatal(err)
+		appLogger.Fatal("Application failed to start", zap.Error(err))
 	}
 }
 
@@ -100,35 +108,27 @@ func startApp(app *fx.App) error {
 	return nil
 }
 
-func newServer() *echo.Echo {
-	e := echo.New()
-	// Set up routes and middleware without userService
-	return e
-}
-
 type ServerParams struct {
 	fx.In
 
 	Echo           *echo.Echo
 	Config         *config.Config
 	Logger         logging.Logger
-	AuthHandler    *handlers.AuthHandler
-	WebHandler     *handlers.WebHandler
 	Renderer       *view.Renderer
 	ContactService contact.Service
 	UserService    user.Service
+	Handlers       []handlers.Handler `group:"handlers"`
 }
 
 func startServer(p ServerParams) error {
-	p.Logger.Debug("starting server with handlers",
-		logging.Int("handler_count", 2),
-	)
+	appLogger.Debug("starting server with handlers", zap.Int("handler_count", len(p.Handlers)))
 
-	p.AuthHandler.Register(p.Echo)
-	p.WebHandler.Register(p.Echo)
+	for _, handler := range p.Handlers {
+		handler.Register(p.Echo)
+	}
 
 	router.Setup(p.Echo, &router.Config{
-		Handlers: []handlers.Handler{p.AuthHandler, p.WebHandler},
+		Handlers: p.Handlers,
 		Static: router.StaticConfig{
 			Path: "/static",
 			Root: "static",
@@ -141,11 +141,11 @@ func startServer(p ServerParams) error {
 		addr = fmt.Sprintf("%s:8090", p.Config.Server.Host)
 	}
 
-	p.Logger.Info("Starting server",
-		logging.String("addr", addr),
-		logging.String("env", p.Config.App.Env),
-		logging.String("version", version),
-		logging.String("gitCommit", gitCommit),
+	appLogger.Info("Starting server",
+		zap.String("addr", addr),
+		zap.String("env", p.Config.App.Env),
+		zap.String("version", version),
+		zap.String("gitCommit", gitCommit),
 	)
 
 	return p.Echo.Start(addr)

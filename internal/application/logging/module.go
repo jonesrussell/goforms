@@ -10,6 +10,9 @@ import (
 	"github.com/jonesrussell/goforms/internal/application/loggingconfig"
 )
 
+// Declare logInstance at the package level
+var logInstance Logger // Declare logInstance
+
 // Module provides the logging dependencies
 var Module = fx.Module("logging",
 	fx.Provide(
@@ -31,13 +34,15 @@ func NewLogger(cfg loggingconfig.LoggerConfigInterface) Logger {
 		zapConfig.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder // Enable colorized output
 		zapLog, err = zapConfig.Build()                                        // Build the development logger
 		if err != nil {
-			panic(fmt.Errorf("failed to create development logger: %w", err)) // Log error before panicking
+			logInstance.Error("Failed to create development logger", forbidden_zap.Error(err)) // Use logInstance
+			panic(fmt.Errorf("failed to create development logger: %w", err))                  // Log error before panicking
 		}
 		zapSugaredLog = zapLog.Sugar() // Convert to SugaredLogger
 	} else {
 		prodLog, err := forbidden_zap.NewProduction() // Create the production logger
 		if err != nil {
-			panic(fmt.Errorf("failed to create production logger: %w", err)) // Log error before panicking
+			logInstance.Error("Failed to create production logger", forbidden_zap.Error(err)) // Use logInstance
+			panic(fmt.Errorf("failed to create production logger: %w", err))                  // Log error before panicking
 		}
 		zapSugaredLog = prodLog.Sugar() // Convert to SugaredLogger
 	}

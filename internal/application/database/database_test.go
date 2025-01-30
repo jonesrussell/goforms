@@ -8,7 +8,7 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	"github.com/jonesrussell/goforms/internal/application/logging"
-	"github.com/jonesrussell/goforms/test/utils"
+	"github.com/jonesrussell/goforms/internal/test/utils"
 )
 
 func TestDatabase_Close_Success(t *testing.T) {

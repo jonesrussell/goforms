@@ -30,6 +30,10 @@ type Logger interface {
 	LogWithPrefix(level string, prefix, msg string, fields ...Field)
 	// Log logs a message
 	Log(message string)
+	// Sync flushes any buffered log entries
+	Sync() error
+	// Fatal logs a message at Fatal level
+	Fatal(msg string, fields ...Field)
 }
 
 // Field represents a logging field.
@@ -141,4 +145,14 @@ func (l *logger) LogWithPrefix(level string, prefix, msg string, fields ...Field
 // Log logs a message
 func (l *logger) Log(message string) {
 	l.log.Info(message) // or use the appropriate log level
+}
+
+// Sync flushes any buffered log entries
+func (l *logger) Sync() error {
+	return l.log.Sync()
+}
+
+// Fatal logs a message at Fatal level
+func (l *logger) Fatal(msg string, fields ...Field) {
+	l.log.Fatalw(msg, convertFields(fields)...)
 }
