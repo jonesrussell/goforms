@@ -13,10 +13,10 @@ import (
 
 // Store defines the methods for user data access
 type Store interface {
-	Create(user *User) error
+	Create(u *User) error
 	Get(id uint) (*User, error)
 	GetByEmail(email string) (*User, error)
-	Update(user *User) error
+	Update(u *User) error
 	Delete(id uint) error
 	List() ([]User, error)
 }
@@ -28,23 +28,23 @@ type store struct {
 }
 
 // Create stores a new user
-func (s *store) Create(user *User) error {
-	s.logger.Debug("Creating user", logging.String("email", user.Email))
+func (s *store) Create(u *User) error {
+	s.logger.Debug("Creating user", logging.String("email", u.Email))
 
 	// Hash the password before saving
-	if err := user.SetPassword(user.Password); err != nil {
+	if err := u.SetPassword(u.Password); err != nil {
 		s.logger.Error("Failed to set password", logging.Error(err))
 		return err
 	}
 
 	_, err := s.db.Exec("INSERT INTO users (email, hashed_password, first_name, last_name, role, active) VALUES (?, ?, ?, ?, ?, ?)",
-		user.Email, user.HashedPassword, user.FirstName, user.LastName, user.Role, user.Active)
+		u.Email, u.HashedPassword, u.FirstName, u.LastName, u.Role, u.Active)
 	if err != nil {
 		s.logger.Error("Failed to create user", logging.Error(err))
 		return err
 	}
 
-	s.logger.Info("User created successfully", logging.String("email", user.Email))
+	s.logger.Info("User created successfully", logging.String("email", u.Email))
 	return nil
 }
 
@@ -72,8 +72,8 @@ func (s *store) Get(id uint) (*User, error) {
 func (s *store) GetByEmail(email string) (*User, error) {
 	s.logger.Debug("Getting user by email", logging.String("email", email))
 
-	var user User
-	err := s.db.Get(&user, "SELECT id, email, hashed_password, created_at, updated_at FROM users WHERE email = ?", email)
+	var u User
+	err := s.db.Get(&u, "SELECT id, email, hashed_password, created_at, updated_at FROM users WHERE email = ?", email)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			s.logger.Warn("User not found by email", logging.String("email", email))
@@ -83,22 +83,22 @@ func (s *store) GetByEmail(email string) (*User, error) {
 		return nil, fmt.Errorf("failed to get user by email: %w", err)
 	}
 
-	s.logger.Debug("User retrieved", logging.Uint("id", user.ID), logging.String("email", user.Email))
-	return &user, nil
+	s.logger.Debug("User retrieved", logging.Uint("id", u.ID), logging.String("email", u.Email))
+	return &u, nil
 }
 
 // Update modifies an existing user
-func (s *store) Update(user *User) error {
+func (s *store) Update(u *User) error {
 	query := `
 		UPDATE users
 		SET email = ?, hashed_password = ?, updated_at = NOW()
 		WHERE id = ?
 	`
 
-	s.logger.Debug("Updating user", logging.Uint("id", user.ID), logging.String("email", user.Email))
+	s.logger.Debug("Updating user", logging.Uint("id", u.ID), logging.String("email", u.Email))
 
 	err := s.db.WithTx(context.Background(), func(tx *sqlx.Tx) error {
-		result, err := tx.Exec(query, user.Email, user.Password, user.ID)
+		result, err := tx.Exec(query, u.Email, u.Password, u.ID)
 		if err != nil {
 			return fmt.Errorf("failed to update user: %w", err)
 		}
@@ -109,18 +109,18 @@ func (s *store) Update(user *User) error {
 		}
 
 		if rows == 0 {
-			return fmt.Errorf("user not found: %d", user.ID)
+			return fmt.Errorf("user not found: %d", u.ID)
 		}
 
 		return nil
 	})
 
 	if err != nil {
-		s.logger.Error("Failed to update user", logging.Error(err), logging.Uint("id", user.ID), logging.String("email", user.Email))
+		s.logger.Error("Failed to update user", logging.Error(err), logging.Uint("id", u.ID), logging.String("email", u.Email))
 		return fmt.Errorf("failed to update user: %w", err)
 	}
 
-	s.logger.Info("User updated successfully", logging.Uint("id", user.ID), logging.String("email", user.Email))
+	s.logger.Info("User updated successfully", logging.Uint("id", u.ID), logging.String("email", u.Email))
 	return nil
 }
 

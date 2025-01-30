@@ -1,26 +1,39 @@
 package user
 
-// InMemoryTokenRepository is a simple in-memory implementation of TokenRepository
+// InMemoryTokenRepository is an in-memory implementation of TokenRepository
 type InMemoryTokenRepository struct {
-	tokens map[string]Token
+	tokens map[string]string
 }
 
 // NewInMemoryTokenRepository creates a new InMemoryTokenRepository
 func NewInMemoryTokenRepository() *InMemoryTokenRepository {
-	return &InMemoryTokenRepository{tokens: make(map[string]Token)}
+	return &InMemoryTokenRepository{
+		tokens: make(map[string]string),
+	}
+}
+
+// SaveToken saves a token for a user
+func (repo *InMemoryTokenRepository) SaveToken(userID string, token string) error {
+	repo.tokens[userID] = token
+	return nil
+}
+
+// GetToken retrieves a token for a user
+func (repo *InMemoryTokenRepository) GetToken(userID string) (string, error) {
+	token, exists := repo.tokens[userID]
+	if !exists {
+		return "", nil // or an error if preferred
+	}
+	return token, nil
 }
 
 // Implement TokenRepository methods
 func (repo *InMemoryTokenRepository) IsTokenBlacklisted(token string) bool {
-	// Check if the token is blacklisted
 	_, exists := repo.tokens[token]
 	return exists
 }
 
 func (repo *InMemoryTokenRepository) BlacklistToken(token string) error {
-	// Add the token to the blacklist
-	repo.tokens[token] = Token{Value: token} // Assuming Token has a Value field
+	repo.tokens[token] = token
 	return nil
 }
-
-// Implement other methods as needed...

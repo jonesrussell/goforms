@@ -74,13 +74,13 @@ func (m *MockService) UpdateSubmissionStatus(ctx context.Context, id int64, stat
 }
 
 // UpdateUser implements user.Service.
-func (m *MockService) UpdateUser(ctx context.Context, user *user.User) error {
+func (m *MockService) UpdateUser(ctx context.Context, u *user.User) error {
 	panic("unimplemented")
 }
 
 func (m *MockService) GetByEmail(email string) (*user.User, error) {
-	if user, exists := m.users[email]; exists {
-		return user, nil // User exists
+	if u, exists := m.users[email]; exists {
+		return u, nil // User exists
 	}
 	return nil, nil // User does not exist
 }

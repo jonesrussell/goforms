@@ -15,11 +15,11 @@ type tokenService struct {
 
 // Login authenticates the user and returns a pair of tokens
 func (t *tokenService) Login(ctx context.Context, login *Login) (*TokenPair, error) {
-	user, err := t.userRepo.GetByEmail(login.Email) // Use userRepo to get user by email
+	u, err := t.userRepo.GetByEmail(login.Email) // Use userRepo to get user by email
 	if err != nil {
 		return nil, fmt.Errorf("failed to authenticate user: %w", err)
 	}
-	if user == nil || !user.CheckPassword(login.Password) {
+	if u == nil || !u.CheckPassword(login.Password) {
 		return nil, fmt.Errorf("invalid credentials")
 	}
 

@@ -62,7 +62,7 @@ func (m *MockService) Logout(ctx context.Context, token string) error {
 	return nil
 }
 
-func (m *MockService) UpdateUser(ctx context.Context, user *User) error {
+func (m *MockService) UpdateUser(ctx context.Context, u *User) error {
 	return nil
 }
 

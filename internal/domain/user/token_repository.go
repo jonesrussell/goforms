@@ -16,8 +16,10 @@ import (
 //     // Implementation...
 // }
 
-// TokenRepository defines the methods for token-related operations
+// TokenRepository defines the interface for token management
 type TokenRepository interface {
+	SaveToken(userID string, token string) error
+	GetToken(userID string) (string, error)
 	IsTokenBlacklisted(token string) bool
 	BlacklistToken(token string) error
 	ValidateToken(token string) (string, error)
@@ -28,7 +30,7 @@ type TokenRepository interface {
 	Delete(tokenID string) error
 }
 
-// TokenRepositoryImpl is the implementation of the TokenRepository interface
+// TokenRepositoryImpl is an implementation of TokenRepository
 type TokenRepositoryImpl struct {
 	db *database.DB
 }
@@ -57,6 +59,16 @@ func (r *TokenRepositoryImpl) Delete(id string) error {
 }
 
 // Implementing the TokenRepository interface methods
+
+func (r *TokenRepositoryImpl) SaveToken(userID string, token string) error {
+	// Implementation for saving a token
+	return nil
+}
+
+func (r *TokenRepositoryImpl) GetToken(userID string) (string, error) {
+	// Implementation for getting a token
+	return "", nil
+}
 
 func (r *TokenRepositoryImpl) IsTokenBlacklisted(token string) bool {
 	// Implementation for checking if a token is blacklisted

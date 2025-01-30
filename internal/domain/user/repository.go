@@ -10,11 +10,11 @@ import (
 
 // Repository defines the interface for user repository operations.
 type Repository interface {
-	Create(user *User) error
+	Create(u *User) error
 	Get(id uint) (*User, error)
 	GetByEmail(email string) (*User, error)
 	List() ([]User, error)
-	Update(user *User) error
+	Update(u *User) error
 	Delete(id uint) error
 }
 
@@ -33,22 +33,22 @@ func NewUserRepository(logger logging.Logger, db *database.DB) Repository {
 }
 
 // Create stores a new user
-func (r *userRepository) Create(user *User) error {
+func (r *userRepository) Create(u *User) error {
 	// Log the user details being saved (excluding the password)
 	r.logger.Debug("Saving user to database", logging.Any("user", map[string]interface{}{
-		"email":      user.Email,
-		"first_name": user.FirstName,
-		"last_name":  user.LastName,
-		"role":       user.Role,
-		"active":     user.Active,
+		"email":      u.Email,
+		"first_name": u.FirstName,
+		"last_name":  u.LastName,
+		"role":       u.Role,
+		"active":     u.Active,
 	}))
 
 	// Use the logger to log the creation attempt
-	r.logger.Debug("Creating user", logging.String("email", user.Email))
+	r.logger.Debug("Creating user", logging.String("email", u.Email))
 
 	// Implement the logic to create a user in the database
 	_, err := r.db.Exec("INSERT INTO users (email, password, first_name, last_name, role, active) VALUES (?, ?, ?, ?, ?, ?)",
-		user.Email, user.Password, user.FirstName, user.LastName, user.Role, user.Active)
+		u.Email, u.Password, u.FirstName, u.LastName, u.Role, u.Active)
 	if err != nil {
 		r.logger.Error("Failed to create user", err)
 		return err
@@ -60,26 +60,26 @@ func (r *userRepository) Create(user *User) error {
 // Get retrieves a user by ID
 func (r *userRepository) Get(id uint) (*User, error) {
 	r.logger.Debug("Getting user by ID", logging.Uint("id", id))
-	user := &User{}
-	err := r.db.QueryRow("SELECT * FROM users WHERE id = ?", id).Scan(&user.Email, &user.Password, &user.FirstName, &user.LastName, &user.Role, &user.Active)
+	u := &User{}
+	err := r.db.QueryRow("SELECT * FROM users WHERE id = ?", id).Scan(&u.Email, &u.Password, &u.FirstName, &u.LastName, &u.Role, &u.Active)
 	if err != nil {
 		r.logger.Error("Failed to get user by ID", err)
 		return nil, err
 	}
-	return user, nil
+	return u, nil
 }
 
 // GetByEmail retrieves a user by email
 func (r *userRepository) GetByEmail(email string) (*User, error) {
-	var user User
-	err := r.db.Get(&user, "SELECT id, email, hashed_password, created_at, updated_at FROM users WHERE email = ?", email)
+	var u User
+	err := r.db.Get(&u, "SELECT id, email, hashed_password, created_at, updated_at FROM users WHERE email = ?", email)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil // User not found
 		}
 		return nil, fmt.Errorf("failed to get user by email: %w", err)
 	}
-	return &user, nil
+	return &u, nil
 }
 
 // List retrieves all users
@@ -94,21 +94,28 @@ func (r *userRepository) List() ([]User, error) {
 
 	var users []User
 	for rows.Next() {
-		user := User{}
-		if err := rows.Scan(&user.Email, &user.Password, &user.FirstName, &user.LastName, &user.Role, &user.Active); err != nil {
+		u := User{}
+		if err := rows.Scan(
+			&u.Email,
+			&u.Password,
+			&u.FirstName,
+			&u.LastName,
+			&u.Role,
+			&u.Active,
+		); err != nil {
 			r.logger.Error("Failed to scan user", err)
 			return nil, err
 		}
-		users = append(users, user)
+		users = append(users, u)
 	}
 	return users, nil
 }
 
 // Update modifies an existing user
-func (r *userRepository) Update(user *User) error {
-	r.logger.Debug("Updating user", logging.Uint("id", user.ID))
+func (r *userRepository) Update(u *User) error {
+	r.logger.Debug("Updating user", logging.Uint("id", u.ID))
 	_, err := r.db.Exec("UPDATE users SET email = ?, password = ?, first_name = ?, last_name = ?, role = ?, active = ? WHERE id = ?",
-		user.Email, user.Password, user.FirstName, user.LastName, user.Role, user.Active, user.ID)
+		u.Email, u.Password, u.FirstName, u.LastName, u.Role, u.Active, u.ID)
 	if err != nil {
 		r.logger.Error("Failed to update user", err)
 		return err

@@ -29,7 +29,7 @@ type Service interface {
 	Logout(ctx context.Context, token string) error
 	SignUp(signup *Signup) (*User, error)
 	UpdateSubmissionStatus(ctx context.Context, id int64, status string) error
-	UpdateUser(ctx context.Context, user *User) error
+	UpdateUser(ctx context.Context, u *User) error
 	IsTokenBlacklisted(token string) bool
 }
 
@@ -55,36 +55,36 @@ func logAndWrapError(logger logging.Logger, msg string, err error) error {
 }
 
 func (s *ServiceImpl) SignUp(signup *Signup) (*User, error) {
-	user := ConvertSignupToUser(signup) // Convert Signup to User
+	u := ConvertSignupToUser(signup) // Convert Signup to User
 
 	// Log the user details before saving (excluding the password)
-	s.logger.Debug("Preparing to create user", logging.Any("user", user))
+	s.logger.Debug("Preparing to create user", logging.Any("user", u))
 
 	// Hash the password before saving
-	if err := user.SetPassword(signup.Password); err != nil {
+	if err := u.SetPassword(signup.Password); err != nil {
 		return nil, err // Return error if password hashing fails
 	}
 
-	err := s.repo.Create(user) // Save the user to the database
+	err := s.repo.Create(u) // Save the user to the database
 	if err != nil {
 		s.logger.Error("Failed to create user", logging.Error(err))
 		return nil, err // Return the error if creation fails
 	}
 
-	s.logger.Debug("User created successfully", logging.Any("user", user))
-	return user, nil // Return the created user
+	s.logger.Debug("User created successfully", logging.Any("user", u))
+	return u, nil // Return the created user
 }
 
 func (s *ServiceImpl) GetUserByID(ctx context.Context, id uint) (*User, error) {
-	user, err := s.repo.Get(id)
+	u, err := s.repo.Get(id)
 	if err != nil {
 		return nil, logAndWrapError(s.logger, "failed to get user", err)
 	}
-	return user, nil
+	return u, nil
 }
 
-func (s *ServiceImpl) UpdateUser(ctx context.Context, user *User) error {
-	if err := s.repo.Update(user); err != nil {
+func (s *ServiceImpl) UpdateUser(ctx context.Context, u *User) error {
+	if err := s.repo.Update(u); err != nil {
 		return logAndWrapError(s.logger, "failed to update user", err)
 	}
 	return nil
@@ -114,27 +114,27 @@ func (s *ServiceImpl) GetByEmail(email string) (*User, error) {
 }
 
 func (s *ServiceImpl) Login(ctx context.Context, login *Login) (*TokenPair, error) {
-	user, err := s.repo.GetByEmail(login.Email)
+	u, err := s.repo.GetByEmail(login.Email)
 	if err != nil {
 		return nil, err // Handle error
 	}
-	if user == nil || !user.CheckPassword(login.Password) {
+	if u == nil || !u.CheckPassword(login.Password) {
 		return nil, fmt.Errorf("invalid credentials")
 	}
 
 	// Proceed with token generation
-	return s.generateTokens(user) // Call the generateTokens function
+	return s.generateTokens(u) // Call the generateTokens function
 }
 
 // generateTokens generates access and refresh tokens for the user
-func (s *ServiceImpl) generateTokens(user *User) (*TokenPair, error) {
+func (s *ServiceImpl) generateTokens(u *User) (*TokenPair, error) {
 	// Example secret key for signing tokens (use a secure method to manage secrets)
 	secretKey := []byte("your_secret_key")
 
 	// Generate Access Token
 	accessTokenClaims := jwt.MapClaims{
-		"email": user.Email,
-		"role":  user.Role,
+		"email": u.Email,
+		"role":  u.Role,
 		"exp":   time.Now().Add(time.Hour * 1).Unix(), // Token expires in 1 hour
 	}
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessTokenClaims)
@@ -145,7 +145,7 @@ func (s *ServiceImpl) generateTokens(user *User) (*TokenPair, error) {
 
 	// Generate Refresh Token
 	refreshTokenClaims := jwt.MapClaims{
-		"email": user.Email,
+		"email": u.Email,
 		"exp":   time.Now().Add(time.Hour * 24 * 7).Unix(), // Token expires in 7 days
 	}
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshTokenClaims)

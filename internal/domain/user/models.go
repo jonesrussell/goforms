@@ -53,8 +53,6 @@ type Request struct {
 type Signup struct {
 	Email    string `json:"email" validate:"required,email"`
 	Password string `json:"password" validate:"required,min=8"`
-	// FirstName string `json:"first_name" validate:"omitempty"`
-	// LastName  string `json:"last_name" validate:"omitempty"`
 }
 
 // Login represents the user login credentials
@@ -72,11 +70,9 @@ type TokenPair struct {
 // ConvertSignupToUser converts a Signup struct to a User struct
 func ConvertSignupToUser(signup *Signup) *User {
 	return &User{
-		Email:    signup.Email,
-		Password: "", // Set this later after hashing
-		// FirstName:      signup.FirstName,
-		// LastName:       signup.LastName,
-		Role:   "user", // Set a default role or modify as needed
-		Active: true,   // Set default active status
+		Email:          signup.Email,
+		HashedPassword: "",     // Set this later after hashing
+		Role:           "user", // Set a default role or modify as needed
+		Active:         true,   // Set default active status
 	}
 }
