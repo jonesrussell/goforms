@@ -1,6 +1,8 @@
 package user
 
 import (
+	"fmt"
+
 	"github.com/jonesrussell/goforms/internal/domain/common"
 )
 
@@ -24,7 +26,11 @@ func (m *MockStore) Create(u *common.User) error {
 
 // Get retrieves a user by ID
 func (m *MockStore) Get(id uint) (*common.User, error) {
-	return m.users[id], nil
+	user, exists := m.users[id]
+	if !exists {
+		return nil, fmt.Errorf("user not found")
+	}
+	return user, nil
 }
 
 // GetByEmail retrieves a user by email
@@ -45,6 +51,9 @@ func (m *MockStore) Update(u *common.User) error {
 
 // Delete removes a user by ID
 func (m *MockStore) Delete(id uint) error {
+	if _, exists := m.users[id]; !exists {
+		return fmt.Errorf("user not found")
+	}
 	delete(m.users, id)
 	return nil
 }

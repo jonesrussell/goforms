@@ -122,6 +122,7 @@ func TestStore_Delete(t *testing.T) {
 	store := user.NewMockStore()
 
 	user := &common.User{
+		ID:        1, // Assign a unique ID for testing
 		Email:     "test@example.com",
 		Password:  "securepassword",
 		FirstName: nil,
@@ -145,7 +146,7 @@ func TestStore_Delete(t *testing.T) {
 	// Verify the user is deleted
 	deletedUser, err := store.Get(user.ID)
 	if err == nil {
-		t.Fatal("expected error, got nil")
+		t.Fatal("expected error, got nil") // Expecting an error since the user should not exist
 	}
 	if deletedUser != nil {
 		t.Fatal("expected user to be nil, got non-nil")
@@ -158,6 +159,7 @@ func TestStore_List(t *testing.T) {
 	// Create multiple users
 	for i := 0; i < 5; i++ {
 		user := &common.User{
+			ID:        uint(i + 1), // Assign a unique ID for each user
 			Email:     fmt.Sprintf("user%d@example.com", i),
 			Password:  "securepassword",
 			FirstName: nil,
