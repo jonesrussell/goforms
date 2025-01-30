@@ -50,6 +50,24 @@
 
 ---
 
+## Application Module
+- **application.Module**
+  - Provides:
+    - `NewWebHandler`
+      - Depends on:
+        - `Logger`
+        - `Renderer`
+        - `ContactService`
+    - `NewAuthHandler`
+      - Depends on:
+        - `Logger`
+        - `UserService`
+    - `NewRenderer`
+      - Depends on:
+        - `Logger`
+
+---
+
 ## Main Application
 - **Main Entry Point**: `cmd/goforms/main.go`
   - Initializes the application with the following modules:

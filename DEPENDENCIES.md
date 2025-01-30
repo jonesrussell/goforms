@@ -26,6 +26,28 @@ var Module = fx.Options(
 
 ---
 
+## Application Module
+
+### Module Definition
+```go
+var Module = fx.Options(
+    user.Module,
+    contact.Module,
+)
+```
+
+### Providers
+- **application.Module**: Combines all application-level modules and providers.
+  - **Important Note**: Ensure that handlers are registered correctly to avoid conflicts during application startup.
+
+### Dependencies
+- **application.Module**:
+  - `NewWebHandler`: Creates a new instance of `WebHandler`.
+  - `NewAuthHandler`: Creates a new instance of `AuthHandler`.
+  - `NewRenderer`: Provides a new instance of `Renderer`.
+
+---
+
 ## View Module
 
 ### Module Definition
@@ -92,7 +114,7 @@ func run() error {
   - `domain.Module`
   - `application.Module`
   - `user.Module`
-  - `presentation.Module`
+  - `view.Module`
 
 ---
 
@@ -137,4 +159,3 @@ func run() error {
      - `UpdateUser(ctx context.Context, user *User) error`
      - `IsTokenBlacklisted(token string) bool`
 ```
-
