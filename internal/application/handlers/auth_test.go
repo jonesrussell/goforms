@@ -1,26 +1,19 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	"github.com/labstack/echo/v4"
 
 	"github.com/jonesrussell/goforms/internal/application/logging"
 	"github.com/jonesrussell/goforms/internal/domain/common"
 	"github.com/jonesrussell/goforms/internal/domain/user"
 	"github.com/jonesrussell/goforms/internal/test/utils"
 )
-
-// Helper function to create a new context
-func newContext(req *http.Request) echo.Context {
-	rec := httptest.NewRecorder()
-	e := echo.New()
-	return e.NewContext(req, rec)
-}
 
 // MockService implementation
 type MockService struct {
@@ -91,6 +84,22 @@ func (m *MockService) DeleteUser(ctx context.Context, userID uint) error {
 	return fmt.Errorf("user not found") // Simulate user not found
 }
 
+// newRequest creates a new HTTP request with the specified method, URL, and body.
+func newRequest(method, url string, body interface{}) (*http.Request, error) {
+	var buf bytes.Buffer
+	if body != nil {
+		if err := json.NewEncoder(&buf).Encode(body); err != nil {
+			return nil, err
+		}
+	}
+	req, err := http.NewRequest(method, url, &buf)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	return req, nil
+}
+
 func TestAuthHandler_handleSignup(t *testing.T) {
 	mockLogger := &utils.MockLogger{
 		DebugFunc: func(msg string, fields ...interface{}) {
@@ -117,7 +126,7 @@ func TestAuthHandler_handleSignup(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create request: %v", err)
 	}
-	c := newContext(req)
+	c := utils.NewContext(req)
 
 	// Call the handler
 	if err := handler.handleSignup(c); err != nil {
@@ -144,7 +153,7 @@ func TestAuthHandler_handleLogin(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create request: %v", err)
 	}
-	c := newContext(req)
+	c := utils.NewContext(req)
 
 	if err := handler.handleLogin(c); err != nil {
 		t.Errorf("expected no error, got %v", err)
@@ -162,7 +171,7 @@ func TestAuthHandler_handleLogout(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/logout", nil)
 	req.Header.Set("Authorization", "Bearer mocktoken")
-	c := newContext(req)
+	c := utils.NewContext(req)
 
 	if err := handler.handleLogout(c); err != nil {
 		t.Errorf("expected no error, got %v", err)

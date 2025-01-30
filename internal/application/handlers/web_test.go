@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -15,21 +13,6 @@ import (
 	"github.com/jonesrussell/goforms/internal/presentation/view"
 	"github.com/jonesrussell/goforms/internal/test/utils"
 )
-
-// Helper function to create a new request with JSON body
-func newRequest(method, path string, body interface{}) (*http.Request, error) {
-	var reqBody []byte
-	var err error
-	if body != nil {
-		reqBody, err = json.Marshal(body)
-		if err != nil {
-			return nil, err
-		}
-	}
-	req := httptest.NewRequest(method, path, bytes.NewReader(reqBody))
-	req.Header.Set("Content-Type", "application/json")
-	return req, nil
-}
 
 // Helper function to create a new context
 func newContext(req *http.Request) echo.Context {
