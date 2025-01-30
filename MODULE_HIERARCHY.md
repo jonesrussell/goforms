@@ -41,6 +41,16 @@
 
 ---
 
+## Repositories Module
+- **repositories.Module**
+  - Provides:
+    - `NewStore`
+      - Depends on:
+        - `database.DB`
+        - `logging.Logger`
+
+---
+
 ## View Module
 - **view.Module**
   - Provides:
@@ -75,6 +85,7 @@
     - `config.Module`
     - `database.Module`
     - `domain.Module`
+    - `repositories.Module`
     - `application.Module`
     - `user.Module`
     - `view.Module`
