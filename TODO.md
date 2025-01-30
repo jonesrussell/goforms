@@ -21,9 +21,9 @@
   - [x] Unit Tests
 - [x] Testing Infrastructure
   - [x] Mock Implementations
--   - [x] Test Utilities
--   - [x] Assertion Helpers
--   - [x] Test Setup Utilities
+  - [x] Test Utilities
+  - [x] Assertion Helpers
+  - [x] Test Setup Utilities
   - [ ] Mock Cleanup
     - [ ] Fix Directory Structure
       - [ ] Remove duplicate contact store implementations:
