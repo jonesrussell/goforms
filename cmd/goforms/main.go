@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 
 	"github.com/joho/godotenv"
@@ -16,7 +15,6 @@ import (
 	"github.com/jonesrussell/goforms/internal/application/logging"
 	"github.com/jonesrussell/goforms/internal/application/loggingconfig"
 	"github.com/jonesrussell/goforms/internal/application/repositories"
-	"github.com/jonesrussell/goforms/internal/application/router"
 	"github.com/jonesrussell/goforms/internal/application/view"
 	"github.com/jonesrussell/goforms/internal/domain"
 	"github.com/jonesrussell/goforms/internal/domain/contact"
@@ -32,47 +30,12 @@ var (
 )
 
 func main() {
-	cfg := loggingconfig.NewConfig()    // Create the logging configuration
-	appLogger := logging.NewLogger(cfg) // Initialize your logger with the configuration
-
-	defer func() {
-		if err := appLogger.Sync(); err != nil {
-			log.Printf("failed to sync logger: %v", err) // Handle the error
-		}
-	}()
-
-	if err := run(appLogger); err != nil {
-		appLogger.Fatal("Application failed to start", logging.Error(err)) // Use logging package for error
-	}
-}
-
-func run(logger logging.Logger) error {
-	loadEnvironment()
-	versionInfo := createVersionInfo()
-	app := createApp(versionInfo, logger)
-	return startApp(app)
-}
-
-func loadEnvironment() {
-	if err := godotenv.Load(); err != nil {
-		log.Printf("Warning: Error loading .env file: %v\n", err)
-	}
-}
-
-func createVersionInfo() handlers.VersionInfo {
-	return handlers.VersionInfo{
-		Version:   version,
-		BuildTime: buildTime,
-		GitCommit: gitCommit,
-		GoVersion: goVersion,
-	}
-}
-
-func createApp(versionInfo handlers.VersionInfo, logger logging.Logger) *fx.App {
-	return fx.New(
+	app := fx.New(
 		fx.Provide(
+			loggingconfig.NewConfig,
+			logging.NewLogger,
 			func() handlers.VersionInfo {
-				return versionInfo
+				return createVersionInfo()
 			},
 		),
 		logging.Module,
@@ -93,23 +56,37 @@ func createApp(versionInfo handlers.VersionInfo, logger logging.Logger) *fx.App 
 		fx.WithLogger(func(log logging.Logger) fxevent.Logger {
 			return &logging.FxEventLogger{Logger: log}
 		}),
-		fx.Invoke(func(p ServerParams) error {
-			return startServer(p, logger)
-		}),
+		fx.Invoke(startApp),
 	)
+
+	app.Run()
 }
 
-func startApp(app *fx.App) error {
-	ctx := context.Background()
-	if err := app.Start(ctx); err != nil {
-		return fmt.Errorf("failed to start application: %w", err)
-	}
+func startApp(lc fx.Lifecycle) {
+	lc.Append(fx.Hook{
+		OnStart: func(ctx context.Context) error {
+			loadEnvironment()
+			return nil
+		},
+		OnStop: func(ctx context.Context) error {
+			return nil
+		},
+	})
+}
 
-	if err := app.Stop(ctx); err != nil {
-		log.Printf("Error stopping application: %v", err)
+func loadEnvironment() {
+	if err := godotenv.Load(); err != nil {
+		log.Printf("Warning: Error loading .env file: %v\n", err)
 	}
-	<-app.Done()
-	return nil
+}
+
+func createVersionInfo() handlers.VersionInfo {
+	return handlers.VersionInfo{
+		Version:   version,
+		BuildTime: buildTime,
+		GitCommit: gitCommit,
+		GoVersion: goVersion,
+	}
 }
 
 type ServerParams struct {
@@ -124,33 +101,33 @@ type ServerParams struct {
 	Handlers       []handlers.Handler `group:"handlers"`
 }
 
-func startServer(p ServerParams, logger logging.Logger) error {
-	logger.Debug("starting server with handlers", logging.Int("handler_count", len(p.Handlers)))
+// func startServer(p ServerParams, logger logging.Logger) error {
+// 	logger.Debug("starting server with handlers", logging.Int("handler_count", len(p.Handlers)))
 
-	for _, handler := range p.Handlers {
-		handler.Register(p.Echo)
-	}
+// 	for _, handler := range p.Handlers {
+// 		handler.Register(p.Echo)
+// 	}
 
-	router.Setup(p.Echo, &router.Config{
-		Handlers: p.Handlers,
-		Static: router.StaticConfig{
-			Path: "/static",
-			Root: "static",
-		},
-		Logger: p.Logger,
-	})
+// 	router.Setup(p.Echo, &router.Config{
+// 		Handlers: p.Handlers,
+// 		Static: router.StaticConfig{
+// 			Path: "/static",
+// 			Root: "static",
+// 		},
+// 		Logger: p.Logger,
+// 	})
 
-	addr := fmt.Sprintf("%s:%d", p.Config.Server.Host, p.Config.Server.Port)
-	if p.Config.Server.Port == 0 {
-		addr = fmt.Sprintf("%s:8090", p.Config.Server.Host)
-	}
+// 	addr := fmt.Sprintf("%s:%d", p.Config.Server.Host, p.Config.Server.Port)
+// 	if p.Config.Server.Port == 0 {
+// 		addr = fmt.Sprintf("%s:8090", p.Config.Server.Host)
+// 	}
 
-	logger.Info("Starting server",
-		logging.String("addr", addr),
-		logging.String("env", p.Config.App.Env),
-		logging.String("version", version),
-		logging.String("gitCommit", gitCommit),
-	)
+// 	logger.Info("Starting server",
+// 		logging.String("addr", addr),
+// 		logging.String("env", p.Config.App.Env),
+// 		logging.String("version", version),
+// 		logging.String("gitCommit", gitCommit),
+// 	)
 
-	return p.Echo.Start(addr)
-}
+// 	return p.Echo.Start(addr)
+// }
