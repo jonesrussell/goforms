@@ -35,7 +35,7 @@ func (s *StoreImpl) Create(u *common.User) error {
 	// Hash the password before saving
 	if err := u.SetPassword(u.Password); err != nil {
 		s.logger.Error("Failed to set password", logging.Error(err))
-		return err
+		return fmt.Errorf("failed to set password: %w", err)
 	}
 
 	_, err := s.db.Exec("INSERT INTO users (email, hashed_password, first_name, last_name, role, active) VALUES (?, ?, ?, ?, ?, ?)",

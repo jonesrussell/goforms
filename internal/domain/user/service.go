@@ -63,7 +63,7 @@ func (s *ServiceImpl) SignUp(signup *Signup) (*common.User, error) {
 
 	// Hash the password before saving
 	if err := u.SetPassword(signup.Password); err != nil {
-		return nil, err // Return error if password hashing fails
+		return nil, fmt.Errorf("failed to set password: %w", err)
 	}
 
 	err := s.repo.Create(u) // Save the user to the database

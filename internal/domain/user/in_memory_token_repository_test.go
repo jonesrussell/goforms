@@ -2,20 +2,24 @@ package user
 
 import (
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestInMemoryTokenRepository_SaveToken(t *testing.T) {
 	repo := NewInMemoryTokenRepository()
 
 	err := repo.SaveToken("user1", "token123")
-	assert.NoError(t, err)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
 
 	// Verify that the token was saved
 	token, err := repo.GetToken("user1")
-	assert.NoError(t, err)
-	assert.Equal(t, "token123", token)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if token != "token123" {
+		t.Errorf("expected token123, got %s", token)
+	}
 }
 
 func TestInMemoryTokenRepository_GetToken_NotFound(t *testing.T) {
@@ -23,8 +27,12 @@ func TestInMemoryTokenRepository_GetToken_NotFound(t *testing.T) {
 
 	// Attempt to get a token that doesn't exist
 	token, err := repo.GetToken("nonexistent_user")
-	assert.NoError(t, err)
-	assert.Empty(t, token) // Expecting an empty string since the token does not exist
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if token != "" { // Expecting an empty string since the token does not exist
+		t.Errorf("expected empty token, got %s", token)
+	}
 }
 
 func TestInMemoryTokenRepository_IsTokenBlacklisted(t *testing.T) {
@@ -32,20 +40,32 @@ func TestInMemoryTokenRepository_IsTokenBlacklisted(t *testing.T) {
 
 	// Save a token and then check if it's blacklisted
 	repo.SaveToken("user1", "token123")
-	assert.False(t, repo.IsTokenBlacklisted("token123")) // Should not be blacklisted initially
+	if repo.IsTokenBlacklisted("token123") {
+		t.Fatal("expected token to not be blacklisted initially")
+	}
 
 	// Blacklist the token
-	repo.BlacklistToken("token123")
-	assert.True(t, repo.IsTokenBlacklisted("token123")) // Should be blacklisted now
+	err := repo.BlacklistToken("token123")
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	// Verify that the token is blacklisted
+	if !repo.IsTokenBlacklisted("token123") {
+		t.Fatal("expected token to be blacklisted")
+	}
 }
 
 func TestInMemoryTokenRepository_BlacklistToken(t *testing.T) {
 	repo := NewInMemoryTokenRepository()
 
-	// Blacklist a token
 	err := repo.BlacklistToken("token123")
-	assert.NoError(t, err)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
 
 	// Verify that the token is blacklisted
-	assert.True(t, repo.IsTokenBlacklisted("token123"))
+	if !repo.IsTokenBlacklisted("token123") {
+		t.Fatal("expected token to be blacklisted")
+	}
 }

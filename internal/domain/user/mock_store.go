@@ -51,7 +51,7 @@ func (m *MockStore) Delete(id uint) error {
 
 // List retrieves all users
 func (m *MockStore) List() ([]common.User, error) {
-	var userList []common.User
+	userList := make([]common.User, 0, len(m.users)) // Pre-allocate with the length of users
 	for _, user := range m.users {
 		userList = append(userList, *user)
 	}
