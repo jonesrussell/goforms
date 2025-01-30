@@ -11,15 +11,18 @@ var Module = fx.Options(
 ```
 
 ### Providers
-- **user.Module**: Provides user-related services.
-- **contact.Module**: Provides contact-related services.
+- **user.Module**: Provides user-related services and repositories.
+  - **Important Note**: Ensure that `user.Repository` is only provided once to avoid conflicts during application startup.
+
+- **contact.Module**: Provides contact-related services and repositories.
 
 ### Dependencies
 - **user.Module**:
-  - `UserService`: Depends on `UserRepository` and `Logger`.
+  - `UserService`: Depends on `UserRepository`, `TokenRepository`, and `Logger`.
   - `UserRepository`: Implemented by `NewStore`, which interacts with the database.
 - **contact.Module**:
   - `ContactService`: Depends on `ContactRepository` and `Logger`.
+  - `ContactRepository`: Implemented by `NewStore`, which interacts with the database.
 
 ---
 
@@ -40,6 +43,26 @@ var Module = fx.Options(
 ### Dependencies
 - **NewRenderer**:
   - `Logger`: Required for logging within the renderer.
+
+---
+
+## Presentation Module
+
+### Module Definition
+```go
+var Module = fx.Options(
+    fx.Provide(
+        NewPresenter,
+    ),
+)
+```
+
+### Providers
+- **NewPresenter**: Creates a new instance of `Presenter`.
+
+### Dependencies
+- **NewPresenter**:
+  - `Logger`: Required for logging within the presenter.
 
 ---
 
@@ -69,31 +92,13 @@ func run() error {
   - `domain.Module`
   - `application.Module`
   - `user.Module`
+  - `presentation.Module`
 
 ---
 
 ## Additional Modules
 
-### Presentation Module
-
-### Module Definition
-```go
-var Module = fx.Options(
-    // Module details
-)
-```
-
-### Providers
-- **Provider Name**: Description of what the provider does.
-
-### Dependencies
-- **Provider Name**:
-  - `Dependency1`: Description of the dependency.
-  - `Dependency2`: Description of the dependency.
-
----
-
-## Observations and Recommendations
+### Observations and Recommendations
 
 1. **User Store Implementation**:
    - Ensure proper error handling and logging in database operations.
@@ -114,4 +119,22 @@ var Module = fx.Options(
 5. **Mock Service for Testing**:
    - Ensure mock services simulate real behavior for effective testing.
    - Review tests for coverage of various scenarios, including error cases.
+
+6. **Logging and Error Handling**:
+   - Ensure that all modules utilize the logging framework consistently.
+   - Implement structured error handling across all services.
+
+7. **User Service Methods**:
+   - Document the methods available in the `UserService` for clarity:
+     - `DeleteUser(ctx context.Context, id uint) error`
+     - `GetByEmail(email string) (*User, error)`
+     - `GetUserByID(ctx context.Context, id uint) (*User, error)`
+     - `ListUsers(ctx context.Context) ([]User, error)`
+     - `Login(ctx context.Context, login *Login) (*TokenPair, error)`
+     - `Logout(ctx context.Context, token string) error`
+     - `SignUp(signup *Signup) (*User, error)`
+     - `UpdateSubmissionStatus(ctx context.Context, id int64, status string) error`
+     - `UpdateUser(ctx context.Context, user *User) error`
+     - `IsTokenBlacklisted(token string) bool`
+```
 
