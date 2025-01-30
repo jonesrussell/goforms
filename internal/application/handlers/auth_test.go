@@ -14,7 +14,7 @@ import (
 	"github.com/jonesrussell/goforms/internal/application/logging"
 	"github.com/jonesrussell/goforms/internal/domain/common"
 	"github.com/jonesrussell/goforms/internal/domain/user"
-	"github.com/jonesrussell/goforms/test/utils"
+	"github.com/jonesrussell/goforms/internal/test/utils"
 )
 
 // Helper function to create a new request with JSON body

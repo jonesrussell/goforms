@@ -10,18 +10,25 @@ import (
 	"github.com/jonesrussell/goforms/internal/application/logging"
 	"github.com/jonesrussell/goforms/internal/domain/contact"
 	"github.com/jonesrussell/goforms/internal/presentation/view"
-	"github.com/jonesrussell/goforms/test/utils"
+	"github.com/jonesrussell/goforms/internal/test/utils"
 )
 
 func TestWebHandler_handleHome(t *testing.T) {
 	e := echo.New()
 	mockLogger := &utils.MockLogger{
-		DebugFunc: func(msg string, fields ...interface{}) {},
-		ErrorFunc: func(msg string, fields ...logging.Field) {},
-		InfoFunc:  func(msg string, fields ...logging.Field) {},
-		WarnFunc:  func(msg string, fields ...logging.Field) {},
+		DebugFunc: func(msg string, fields ...interface{}) {
+			t.Logf("DEBUG: %s, fields: %v", msg, fields)
+		},
+		ErrorFunc: func(msg string, fields ...logging.Field) {
+			t.Errorf("ERROR: %s, fields: %v", msg, fields)
+		},
+		InfoFunc: func(msg string, fields ...logging.Field) {
+			t.Logf("INFO: %s, fields: %v", msg, fields)
+		},
+		WarnFunc: func(msg string, fields ...logging.Field) {
+			t.Logf("WARN: %s, fields: %v", msg, fields)
+		},
 	}
-
 	renderer := &view.Renderer{}             // Initialize your view renderer here
 	contactService := &contact.MockService{} // Use the mock service
 
