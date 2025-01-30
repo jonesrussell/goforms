@@ -9,6 +9,7 @@ import (
 	"github.com/dgrijalva/jwt-go" // Ensure this is present
 
 	"github.com/jonesrussell/goforms/internal/application/logging"
+	"github.com/jonesrussell/goforms/internal/domain/common"
 )
 
 var (
@@ -22,14 +23,14 @@ var (
 // Service defines the methods for user services
 type Service interface {
 	DeleteUser(ctx context.Context, id uint) error
-	GetByEmail(email string) (*User, error)
-	GetUserByID(ctx context.Context, id uint) (*User, error)
-	ListUsers(ctx context.Context) ([]User, error)
+	GetByEmail(email string) (*common.User, error)
+	GetUserByID(ctx context.Context, id uint) (*common.User, error)
+	ListUsers(ctx context.Context) ([]common.User, error)
 	Login(ctx context.Context, login *Login) (*TokenPair, error)
 	Logout(ctx context.Context, token string) error
-	SignUp(signup *Signup) (*User, error)
+	SignUp(signup *Signup) (*common.User, error)
 	UpdateSubmissionStatus(ctx context.Context, id int64, status string) error
-	UpdateUser(ctx context.Context, u *User) error
+	UpdateUser(ctx context.Context, u *common.User) error
 	IsTokenBlacklisted(token string) bool
 }
 
@@ -54,7 +55,7 @@ func logAndWrapError(logger logging.Logger, msg string, err error) error {
 	return fmt.Errorf("%s: %w", msg, err)
 }
 
-func (s *ServiceImpl) SignUp(signup *Signup) (*User, error) {
+func (s *ServiceImpl) SignUp(signup *Signup) (*common.User, error) {
 	u := ConvertSignupToUser(signup) // Convert Signup to User
 
 	// Log the user details before saving (excluding the password)
@@ -75,7 +76,7 @@ func (s *ServiceImpl) SignUp(signup *Signup) (*User, error) {
 	return u, nil // Return the created user
 }
 
-func (s *ServiceImpl) GetUserByID(ctx context.Context, id uint) (*User, error) {
+func (s *ServiceImpl) GetUserByID(ctx context.Context, id uint) (*common.User, error) {
 	u, err := s.repo.Get(id)
 	if err != nil {
 		return nil, logAndWrapError(s.logger, "failed to get user", err)
@@ -83,7 +84,7 @@ func (s *ServiceImpl) GetUserByID(ctx context.Context, id uint) (*User, error) {
 	return u, nil
 }
 
-func (s *ServiceImpl) UpdateUser(ctx context.Context, u *User) error {
+func (s *ServiceImpl) UpdateUser(ctx context.Context, u *common.User) error {
 	if err := s.repo.Update(u); err != nil {
 		return logAndWrapError(s.logger, "failed to update user", err)
 	}
@@ -97,7 +98,7 @@ func (s *ServiceImpl) DeleteUser(ctx context.Context, id uint) error {
 	return nil
 }
 
-func (s *ServiceImpl) ListUsers(ctx context.Context) ([]User, error) {
+func (s *ServiceImpl) ListUsers(ctx context.Context) ([]common.User, error) {
 	users, err := s.repo.List()
 	if err != nil {
 		return nil, logAndWrapError(s.logger, "failed to list users", err)
@@ -105,7 +106,7 @@ func (s *ServiceImpl) ListUsers(ctx context.Context) ([]User, error) {
 	return users, nil
 }
 
-func (s *ServiceImpl) GetByEmail(email string) (*User, error) {
+func (s *ServiceImpl) GetByEmail(email string) (*common.User, error) {
 	user, err := s.repo.GetByEmail(email)
 	if err != nil {
 		return nil, logAndWrapError(s.logger, "failed to get user by email", err)
@@ -127,7 +128,7 @@ func (s *ServiceImpl) Login(ctx context.Context, login *Login) (*TokenPair, erro
 }
 
 // generateTokens generates access and refresh tokens for the user
-func (s *ServiceImpl) generateTokens(u *User) (*TokenPair, error) {
+func (s *ServiceImpl) generateTokens(u *common.User) (*TokenPair, error) {
 	// Example secret key for signing tokens (use a secure method to manage secrets)
 	secretKey := []byte("your_secret_key")
 

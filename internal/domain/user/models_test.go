@@ -4,17 +4,19 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/jonesrussell/goforms/internal/domain/common"
 )
 
 func TestSetPassword(t *testing.T) {
-	user := &User{}
+	user := &common.User{}
 	err := user.SetPassword("securepassword")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, user.HashedPassword)
 }
 
 func TestCheckPassword(t *testing.T) {
-	user := &User{}
+	user := &common.User{}
 	err := user.SetPassword("securepassword")
 	assert.NoError(t, err)
 

@@ -12,6 +12,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/jonesrussell/goforms/internal/application/logging"
+	"github.com/jonesrussell/goforms/internal/domain/common"
 	"github.com/jonesrussell/goforms/internal/domain/user"
 	"github.com/jonesrussell/goforms/test/utils"
 )
@@ -40,11 +41,11 @@ func newContext(req *http.Request) echo.Context {
 
 // MockService implementation
 type MockService struct {
-	users map[string]*user.User // Simulate a user store
+	users map[string]*common.User // Simulate a user store
 }
 
 // GetUserByID implements user.Service.
-func (m *MockService) GetUserByID(ctx context.Context, id uint) (*user.User, error) {
+func (m *MockService) GetUserByID(ctx context.Context, id uint) (*common.User, error) {
 	panic("unimplemented")
 }
 
@@ -54,7 +55,7 @@ func (m *MockService) IsTokenBlacklisted(token string) bool {
 }
 
 // ListUsers implements user.Service.
-func (m *MockService) ListUsers(ctx context.Context) ([]user.User, error) {
+func (m *MockService) ListUsers(ctx context.Context) ([]common.User, error) {
 	panic("unimplemented")
 }
 
@@ -74,23 +75,23 @@ func (m *MockService) UpdateSubmissionStatus(ctx context.Context, id int64, stat
 }
 
 // UpdateUser implements user.Service.
-func (m *MockService) UpdateUser(ctx context.Context, u *user.User) error {
+func (m *MockService) UpdateUser(ctx context.Context, u *common.User) error {
 	panic("unimplemented")
 }
 
-func (m *MockService) GetByEmail(email string) (*user.User, error) {
+func (m *MockService) GetByEmail(email string) (*common.User, error) {
 	if u, exists := m.users[email]; exists {
 		return u, nil // User exists
 	}
 	return nil, nil // User does not exist
 }
 
-func (m *MockService) SignUp(signup *user.Signup) (*user.User, error) {
+func (m *MockService) SignUp(signup *user.Signup) (*common.User, error) {
 	if _, exists := m.users[signup.Email]; exists {
 		return nil, fmt.Errorf("user already exists") // Simulate user already exists
 	}
 	// Create a new user and add to the mock store
-	newUser := &user.User{Email: signup.Email} // Only set the Email field
+	newUser := &common.User{Email: signup.Email} // Only set the Email field
 	m.users[signup.Email] = newUser
 	return newUser, nil
 }
@@ -117,7 +118,7 @@ func TestAuthHandler_handleSignup(t *testing.T) {
 			fmt.Printf("ERROR: %s %v\n", msg, fields)
 		},
 	}
-	mockUserService := &MockService{users: make(map[string]*user.User)}
+	mockUserService := &MockService{users: make(map[string]*common.User)}
 	handler := NewAuthHandler(mockLogger, mockUserService)
 
 	validInput := user.Signup{

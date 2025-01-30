@@ -6,15 +6,16 @@ import (
 
 	"github.com/jonesrussell/goforms/internal/application/logging"
 	"github.com/jonesrussell/goforms/internal/application/repositories/database"
+	"github.com/jonesrussell/goforms/internal/domain/common"
 )
 
 // Repository defines the interface for user repository operations.
 type Repository interface {
-	Create(u *User) error
-	Get(id uint) (*User, error)
-	GetByEmail(email string) (*User, error)
-	List() ([]User, error)
-	Update(u *User) error
+	Create(u *common.User) error
+	Get(id uint) (*common.User, error)
+	GetByEmail(email string) (*common.User, error)
+	List() ([]common.User, error)
+	Update(u *common.User) error
 	Delete(id uint) error
 }
 
@@ -33,7 +34,7 @@ func NewUserRepository(logger logging.Logger, db *database.DB) Repository {
 }
 
 // Create stores a new user
-func (r *userRepository) Create(u *User) error {
+func (r *userRepository) Create(u *common.User) error {
 	// Log the user details being saved (excluding the password)
 	r.logger.Debug("Saving user to database", logging.Any("user", map[string]interface{}{
 		"email":      u.Email,
@@ -58,9 +59,9 @@ func (r *userRepository) Create(u *User) error {
 }
 
 // Get retrieves a user by ID
-func (r *userRepository) Get(id uint) (*User, error) {
+func (r *userRepository) Get(id uint) (*common.User, error) {
 	r.logger.Debug("Getting user by ID", logging.Uint("id", id))
-	u := &User{}
+	u := &common.User{}
 	err := r.db.QueryRow("SELECT * FROM users WHERE id = ?", id).Scan(&u.Email, &u.Password, &u.FirstName, &u.LastName, &u.Role, &u.Active)
 	if err != nil {
 		r.logger.Error("Failed to get user by ID", err)
@@ -70,8 +71,8 @@ func (r *userRepository) Get(id uint) (*User, error) {
 }
 
 // GetByEmail retrieves a user by email
-func (r *userRepository) GetByEmail(email string) (*User, error) {
-	var u User
+func (r *userRepository) GetByEmail(email string) (*common.User, error) {
+	var u common.User
 	err := r.db.Get(&u, "SELECT id, email, hashed_password, created_at, updated_at FROM users WHERE email = ?", email)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -83,7 +84,7 @@ func (r *userRepository) GetByEmail(email string) (*User, error) {
 }
 
 // List retrieves all users
-func (r *userRepository) List() ([]User, error) {
+func (r *userRepository) List() ([]common.User, error) {
 	r.logger.Debug("Listing users")
 	rows, err := r.db.Query("SELECT * FROM users")
 	if err != nil {
@@ -92,9 +93,9 @@ func (r *userRepository) List() ([]User, error) {
 	}
 	defer rows.Close()
 
-	var users []User
+	var users []common.User
 	for rows.Next() {
-		u := User{}
+		u := common.User{}
 		if err := rows.Scan(
 			&u.Email,
 			&u.Password,
@@ -112,7 +113,7 @@ func (r *userRepository) List() ([]User, error) {
 }
 
 // Update modifies an existing user
-func (r *userRepository) Update(u *User) error {
+func (r *userRepository) Update(u *common.User) error {
 	r.logger.Debug("Updating user", logging.Uint("id", u.ID))
 	_, err := r.db.Exec("UPDATE users SET email = ?, password = ?, first_name = ?, last_name = ?, role = ?, active = ? WHERE id = ?",
 		u.Email, u.Password, u.FirstName, u.LastName, u.Role, u.Active, u.ID)

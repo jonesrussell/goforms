@@ -16,8 +16,8 @@ var Module = fx.Options(
 )
 
 // NewStore creates a new user repository
-func NewStore(db *database.DB, logger logging.Logger) Repository {
-	return &store{
+func NewStore(db *database.DB, logger logging.Logger) Store {
+	return &StoreImpl{
 		db:     db,
 		logger: logger,
 	}

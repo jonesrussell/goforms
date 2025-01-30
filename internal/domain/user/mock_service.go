@@ -3,6 +3,8 @@ package user
 import (
 	"context"
 	"errors"
+
+	"github.com/jonesrussell/goforms/internal/domain/common"
 )
 
 // Define domain-specific errors
@@ -17,15 +19,15 @@ type MockService struct{}
 var _ Service = (*MockService)(nil)
 
 // Implement all methods required by the Service interface
-func (m *MockService) GetByEmail(email string) (*User, error) {
+func (m *MockService) GetByEmail(email string) (*common.User, error) {
 	if email == "" {
 		return nil, ErrInvalidEmail
 	}
-	return &User{Email: email}, nil
+	return &common.User{Email: email}, nil
 }
 
-func (m *MockService) SignUp(signupRequest *Signup) (*User, error) {
-	return &User{Email: signupRequest.Email}, nil
+func (m *MockService) SignUp(signupRequest *Signup) (*common.User, error) {
+	return &common.User{Email: signupRequest.Email}, nil
 }
 
 func (m *MockService) Login(ctx context.Context, login *Login) (*TokenPair, error) {
@@ -39,12 +41,12 @@ func (m *MockService) UpdateSubmissionStatus(ctx context.Context, id int64, stat
 	return nil
 }
 
-func (m *MockService) GetUserByID(ctx context.Context, id uint) (*User, error) {
-	return &User{ID: id}, nil
+func (m *MockService) GetUserByID(ctx context.Context, id uint) (*common.User, error) {
+	return &common.User{ID: id}, nil
 }
 
-func (m *MockService) ListUsers(ctx context.Context) ([]User, error) {
-	return []User{
+func (m *MockService) ListUsers(ctx context.Context) ([]common.User, error) {
+	return []common.User{
 		{ID: 1, Email: "user1@example.com"},
 		{ID: 2, Email: "user2@example.com"},
 	}, nil
@@ -54,15 +56,15 @@ func (m *MockService) DeleteUser(ctx context.Context, id uint) error {
 	return nil
 }
 
-func (m *MockService) Signup( /* parameters */ ) (*User, error) {
-	return &User{Email: "example@example.com"}, nil
+func (m *MockService) Signup( /* parameters */ ) (*common.User, error) {
+	return &common.User{Email: "example@example.com"}, nil
 }
 
 func (m *MockService) Logout(ctx context.Context, token string) error {
 	return nil
 }
 
-func (m *MockService) UpdateUser(ctx context.Context, u *User) error {
+func (m *MockService) UpdateUser(ctx context.Context, u *common.User) error {
 	return nil
 }
 

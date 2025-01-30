@@ -2,7 +2,7 @@ package layouts
 
 import (
 	t "github.com/a-h/templ"
-	"github.com/jonesrussell/goforms/internal/domain/user"
+	"github.com/jonesrussell/goforms/internal/domain/common"
 	"github.com/jonesrussell/goforms/internal/presentation/components"
 )
 
@@ -10,7 +10,7 @@ type PageData struct {
 	Title   string
 	Content t.Component
 	Styles  []string
-	User    *user.User
+	User    *common.User
 	Debug   bool
 }
 

@@ -9,26 +9,27 @@ import (
 
 	"github.com/jonesrussell/goforms/internal/application/logging"
 	"github.com/jonesrussell/goforms/internal/application/repositories/database"
+	"github.com/jonesrussell/goforms/internal/domain/common"
 )
 
 // Store defines the methods for user data access
 type Store interface {
-	Create(u *User) error
-	Get(id uint) (*User, error)
-	GetByEmail(email string) (*User, error)
-	Update(u *User) error
+	Create(u *common.User) error
+	Get(id uint) (*common.User, error)
+	GetByEmail(email string) (*common.User, error)
+	Update(u *common.User) error
 	Delete(id uint) error
-	List() ([]User, error)
+	List() ([]common.User, error)
 }
 
-// store implements the UserRepository interface
-type store struct {
+// StoreImpl implements the UserRepository interface
+type StoreImpl struct {
 	db     *database.DB
 	logger logging.Logger
 }
 
 // Create stores a new user
-func (s *store) Create(u *User) error {
+func (s *StoreImpl) Create(u *common.User) error {
 	s.logger.Debug("Creating user", logging.String("email", u.Email))
 
 	// Hash the password before saving
@@ -49,7 +50,7 @@ func (s *store) Create(u *User) error {
 }
 
 // Get retrieves a user by ID
-func (s *store) Get(id uint) (*User, error) {
+func (s *StoreImpl) Get(id uint) (*common.User, error) {
 	query := `
 		SELECT id, email, hashed_password, created_at, updated_at
 		FROM users
@@ -58,7 +59,7 @@ func (s *store) Get(id uint) (*User, error) {
 
 	s.logger.Debug("Getting user by ID", logging.Uint("id", id))
 
-	var u User
+	var u common.User
 	if err := s.db.Get(&u, query, id); err != nil {
 		s.logger.Error("Failed to get user by ID", logging.Error(err), logging.Uint("id", id))
 		return nil, fmt.Errorf("failed to get user by ID: %w", err)
@@ -69,10 +70,10 @@ func (s *store) Get(id uint) (*User, error) {
 }
 
 // GetByEmail retrieves a user by email
-func (s *store) GetByEmail(email string) (*User, error) {
+func (s *StoreImpl) GetByEmail(email string) (*common.User, error) {
 	s.logger.Debug("Getting user by email", logging.String("email", email))
 
-	var u User
+	var u common.User
 	err := s.db.Get(&u, "SELECT id, email, hashed_password, created_at, updated_at FROM users WHERE email = ?", email)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -88,7 +89,7 @@ func (s *store) GetByEmail(email string) (*User, error) {
 }
 
 // Update modifies an existing user
-func (s *store) Update(u *User) error {
+func (s *StoreImpl) Update(u *common.User) error {
 	query := `
 		UPDATE users
 		SET email = ?, hashed_password = ?, updated_at = NOW()
@@ -125,7 +126,7 @@ func (s *store) Update(u *User) error {
 }
 
 // Delete removes a user by ID
-func (s *store) Delete(id uint) error {
+func (s *StoreImpl) Delete(id uint) error {
 	query := `
 		DELETE FROM users
 		WHERE id = ?
@@ -161,7 +162,7 @@ func (s *store) Delete(id uint) error {
 }
 
 // List retrieves all users
-func (s *store) List() ([]User, error) {
+func (s *StoreImpl) List() ([]common.User, error) {
 	query := `
 		SELECT id, email, hashed_password, created_at, updated_at
 		FROM users
@@ -170,7 +171,7 @@ func (s *store) List() ([]User, error) {
 
 	s.logger.Debug("Listing users")
 
-	var users []User
+	var users []common.User
 	if err := s.db.Select(&users, query); err != nil {
 		s.logger.Error("Failed to list users", logging.Error(err))
 		return nil, fmt.Errorf("failed to list users: %w", err)

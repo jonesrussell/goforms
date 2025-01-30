@@ -3,7 +3,7 @@ package repositories
 import (
 	"fmt"
 
-	"github.com/jonesrussell/goforms/internal/domain/user"
+	"github.com/jonesrussell/goforms/internal/domain/common"
 )
 
 // MockDB is a mock implementation of the database interface for testing purposes.
@@ -24,8 +24,8 @@ func (db *MockDB) Get(dest interface{}, query string, args ...interface{}) error
 	if u, ok := db.data[args[0].(string)]; ok {
 		// Use a pointer to modify the value of dest
 		switch d := dest.(type) {
-		case *user.User:
-			*d = *(u.(*user.User)) // Dereference u to assign the value
+		case *common.User:
+			*d = *(u.(*common.User)) // Dereference u to assign the value
 		default:
 			return fmt.Errorf("unsupported destination type")
 		}
@@ -35,7 +35,7 @@ func (db *MockDB) Get(dest interface{}, query string, args ...interface{}) error
 }
 
 // Create simulates inserting a record into the mock database.
-func (db *MockDB) Create(user *user.User) error {
+func (db *MockDB) Create(user *common.User) error {
 	// Simulate a simple insert logic
 	db.data[user.Email] = user
 	return nil
