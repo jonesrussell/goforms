@@ -5,7 +5,6 @@ import (
 
 	"github.com/jonesrussell/goforms/internal/application/logging"
 	"github.com/jonesrussell/goforms/internal/application/repositories/database"
-	"github.com/jonesrussell/goforms/internal/domain/user"
 )
 
 // Module provides persistence dependencies
@@ -14,14 +13,6 @@ var Module = fx.Module("repositories",
 	fx.Provide(
 		database.NewConfig,
 		database.NewDB,
-	),
-
-	// Stores
-	fx.Provide(
-		fx.Annotate(
-			user.NewStore,
-			fx.As(new(user.Store)),
-		),
 	),
 )
 

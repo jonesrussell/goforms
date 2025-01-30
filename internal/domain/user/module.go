@@ -8,11 +8,8 @@ import (
 )
 
 // Module provides the user-related dependencies
-var Module = fx.Module("user",
-	fx.Provide(
-		NewStore,   // Ensure this is the only place you provide user.Repository
-		NewService, // Provide the user service
-	),
+var Module = fx.Options(
+	fx.Provide(NewStore),
 	fx.Invoke(func(logger logging.Logger) {
 		logger.Debug("User module initialized")
 	}),
@@ -23,14 +20,5 @@ func NewStore(db *database.DB, logger logging.Logger) Repository {
 	return &store{
 		db:     db,
 		logger: logger,
-	}
-}
-
-// NewService creates a new user service
-func NewService(repo Repository, tokenRepo TokenRepository, logger logging.Logger) *ServiceImpl {
-	return &ServiceImpl{
-		repo:      repo,
-		tokenRepo: tokenRepo,
-		logger:    logger,
 	}
 }

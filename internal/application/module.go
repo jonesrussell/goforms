@@ -13,8 +13,6 @@ import (
 
 // Module combines all application-level modules and providers.
 var Module = fx.Options(
-	user.Module,
-
 	fx.Provide(
 		// View Renderer
 		view.NewRenderer,
@@ -24,6 +22,7 @@ var Module = fx.Options(
 		AsHandler(NewAuthHandler),
 		user.NewInMemoryTokenRepository,
 	),
+
 	fx.Provide(func(db *database.DB) user.TokenRepository {
 		return user.NewTokenRepository(db)
 	}),

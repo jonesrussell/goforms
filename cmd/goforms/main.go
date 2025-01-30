@@ -64,14 +64,23 @@ func createApp(versionInfo handlers.VersionInfo) *fx.App {
 		database.Module,
 		domain.Module,
 		application.Module,
-		user.Module,
 		fx.Provide(newServer),
 		fx.Provide(func() handlers.VersionInfo { return versionInfo }),
 		fx.Provide(
-			func(logger logging.Logger, renderer *view.Renderer, contactService contact.Service) handlers.Handler {
+			func(logger logging.Logger, renderer *view.Renderer, contactService contact.Service, userRepo user.Repository, tokenRepo user.TokenRepository) user.Service {
+				return user.NewService(userRepo, tokenRepo, logger)
+			},
+		),
+		fx.Provide(
+			func(logger logging.Logger, renderer *view.Renderer, contactService contact.Service, userService user.Service) handlers.Handler {
 				h := handlers.NewWebHandler(logger, handlers.WithRenderer(renderer), handlers.WithContactService(contactService))
 				logger.Debug("WebHandler created successfully")
 				return h
+			},
+		),
+		fx.Provide(
+			func(userService user.Service) *user.Service {
+				return &userService
 			},
 		),
 		fx.Invoke(func(log logging.Logger) {

@@ -16,7 +16,7 @@ var (
 	ErrTokenBlacklisted   = errors.New("token is blacklisted")
 )
 
-// Service defines the methods for user-related operations
+// Service defines the methods for user services
 type Service interface {
 	DeleteUser(ctx context.Context, id uint) error
 	GetByEmail(email string) (*User, error)
@@ -30,7 +30,7 @@ type Service interface {
 	IsTokenBlacklisted(token string) bool
 }
 
-// Service defines the methods for user-related operations
+// ServiceImpl implements the Service interface
 type ServiceImpl struct {
 	repo      Repository      // User repository for user-related operations
 	tokenRepo TokenRepository // Token repository for token-related operations
@@ -146,4 +146,19 @@ func (s *ServiceImpl) UpdateSubmissionStatus(ctx context.Context, id int64, stat
 	// Implement your logic to update the submission status
 	// For example, you might want to update a submission in the database
 	return nil // Return nil for now, or implement actual logic
+}
+
+// Implement the methods defined in the Service interface
+func (s *ServiceImpl) SomeMethod() error {
+	// Implementation here
+	return nil
+}
+
+// NewService creates a new user service
+func NewService(repo Repository, tokenRepo TokenRepository, logger logging.Logger) Service {
+	return &ServiceImpl{
+		repo:      repo,
+		tokenRepo: tokenRepo,
+		logger:    logger,
+	}
 }
