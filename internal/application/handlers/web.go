@@ -144,28 +144,9 @@ func (h *WebHandler) Register(e *echo.Echo) {
 	h.Logger.Debug("web routes registration complete")
 }
 
-// handleHome renders the home page
+// handleHome handles requests to the homepage
 func (h *WebHandler) handleHome(c echo.Context) error {
-	h.Logger.Debug("handling home page request",
-		logging.String("path", c.Path()),
-		logging.String("method", c.Request().Method),
-	)
-
-	data := layouts.PageData{
-		Title: "Home",
-		Debug: h.Debug,
-	}
-	data.Content = pages.HomeContent()
-
-	if err := h.renderer.Render(c, pages.Home(data)); err != nil {
-		h.Logger.Error("failed to render home page",
-			logging.String("path", c.Path()),
-			logging.Error(err),
-		)
-		return fmt.Errorf("failed to render home page: %w", err)
-	}
-	h.Logger.Debug("home page rendered successfully")
-	return nil
+	return c.JSON(http.StatusOK, map[string]string{"message": "Welcome to the GoForms API!"})
 }
 
 // handleDemo renders the demo page

@@ -17,6 +17,7 @@ import (
 	"github.com/jonesrussell/goforms/internal/application/router"
 	"github.com/jonesrussell/goforms/internal/domain"
 	"github.com/jonesrussell/goforms/internal/domain/user"
+	"github.com/jonesrussell/goforms/internal/presentation/view"
 )
 
 //nolint:gochecknoglobals // These variables are populated by -ldflags at build time
@@ -68,11 +69,11 @@ func createApp(versionInfo handlers.VersionInfo) *fx.App {
 		fx.Provide(user.NewUserRepository),
 		fx.Provide(user.NewTokenRepository),
 		fx.Provide(newServer),
-		fx.Provide(func(logger logging.Logger, userService user.Service) *handlers.AuthHandler {
+		fx.Provide(func(logger logging.Logger, userService user.Service, renderer *view.Renderer) *handlers.AuthHandler {
 			return handlers.NewAuthHandler(logger, userService)
 		}),
-		fx.Provide(func(logger logging.Logger) *handlers.WebHandler {
-			return handlers.NewWebHandler(logger)
+		fx.Provide(func(logger logging.Logger, renderer *view.Renderer) *handlers.WebHandler {
+			return handlers.NewWebHandler(logger, handlers.WithRenderer(renderer))
 		}),
 		fx.Invoke(startServer),
 	)
