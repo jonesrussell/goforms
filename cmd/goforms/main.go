@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	"github.com/joho/godotenv"
@@ -14,6 +15,7 @@ import (
 	"github.com/jonesrussell/goforms/internal/application/handlers"
 	"github.com/jonesrussell/goforms/internal/application/logging"
 	"github.com/jonesrussell/goforms/internal/application/repositories"
+	"github.com/jonesrussell/goforms/internal/application/router"
 	"github.com/jonesrussell/goforms/internal/application/view"
 	"github.com/jonesrussell/goforms/internal/domain"
 	"github.com/jonesrussell/goforms/internal/domain/contact"
@@ -38,36 +40,73 @@ func main() {
 			func() handlers.VersionInfo {
 				return createVersionInfo()
 			},
+			func() *echo.Echo {
+				return echo.New()
+			},
+			func() *view.Renderer {
+				return view.NewRenderer()
+			},
+			user.NewService,
+			user.NewUserRepository,
+			user.NewTokenRepository,
+			// Remove contact.NewService if it's already provided in the contact module
+			// contact.NewService,
 		),
 		config.Module,
 		domain.Module,
 		application.Module,
 		repositories.Module,
 		user.Module,
-		fx.Provide(
-			user.NewService,
-			user.NewUserRepository,
-			user.NewTokenRepository,
-		),
-		fx.Invoke(startApp),
+		contact.Module, // Ensure the contact module is included here
+		fx.Invoke(startAppAndServer),
 	)
 
 	app.Run()
 }
 
-func startApp(lc fx.Lifecycle) {
+func startAppAndServer(lc fx.Lifecycle, p ServerParams, logger logging.Logger) {
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			loadEnvironment()
-			return nil
+
+			logger.Debug("starting server with handlers", logging.Int("handler_count", len(p.Handlers)))
+
+			for _, handler := range p.Handlers {
+				handler.Register(p.Echo)
+			}
+
+			router.Setup(p.Echo, &router.Config{
+				Handlers: p.Handlers,
+				Static: router.StaticConfig{
+					Path: "/static",
+					Root: "static",
+				},
+				Logger: p.Logger,
+			})
+
+			addr := fmt.Sprintf("%s:%d", p.Config.Server.Host, p.Config.Server.Port)
+			if p.Config.Server.Port == 0 {
+				addr = fmt.Sprintf("%s:8090", p.Config.Server.Host)
+			}
+
+			logger.Info("Starting server",
+				logging.String("addr", addr),
+				logging.String("env", p.Config.App.Env),
+				logging.String("version", version),
+				logging.String("gitCommit", gitCommit),
+			)
+
+			return p.Echo.Start(addr)
 		},
 		OnStop: func(ctx context.Context) error {
+			// Handle any cleanup if necessary
 			return nil
 		},
 	})
 }
 
 func loadEnvironment() {
+	log.Println("Loading environment")
 	if err := godotenv.Load(); err != nil {
 		log.Printf("Warning: Error loading .env file: %v\n", err)
 	}
@@ -93,34 +132,3 @@ type ServerParams struct {
 	UserService    user.Service
 	Handlers       []handlers.Handler `group:"handlers"`
 }
-
-// func startServer(p ServerParams, logger logging.Logger) error {
-// 	logger.Debug("starting server with handlers", logging.Int("handler_count", len(p.Handlers)))
-
-// 	for _, handler := range p.Handlers {
-// 		handler.Register(p.Echo)
-// 	}
-
-// 	router.Setup(p.Echo, &router.Config{
-// 		Handlers: p.Handlers,
-// 		Static: router.StaticConfig{
-// 			Path: "/static",
-// 			Root: "static",
-// 		},
-// 		Logger: p.Logger,
-// 	})
-
-// 	addr := fmt.Sprintf("%s:%d", p.Config.Server.Host, p.Config.Server.Port)
-// 	if p.Config.Server.Port == 0 {
-// 		addr = fmt.Sprintf("%s:8090", p.Config.Server.Host)
-// 	}
-
-// 	logger.Info("Starting server",
-// 		logging.String("addr", addr),
-// 		logging.String("env", p.Config.App.Env),
-// 		logging.String("version", version),
-// 		logging.String("gitCommit", gitCommit),
-// 	)
-
-// 	return p.Echo.Start(addr)
-// }
