@@ -2,6 +2,7 @@
 package logging
 
 import (
+	"fmt"
 	"time"
 
 	forbidden_zap "go.uber.org/zap"
@@ -132,7 +133,11 @@ func (l *logger) Log(message string) {
 
 // Sync flushes any buffered log entries
 func (l *logger) Sync() error {
-	return l.log.Sync()
+	err := l.log.Sync()
+	if err != nil {
+		return fmt.Errorf("failed to sync logger: %w", err)
+	}
+	return nil
 }
 
 // Fatal logs a message at Fatal level

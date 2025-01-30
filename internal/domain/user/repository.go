@@ -4,10 +4,11 @@ import (
 	"database/sql"
 	"fmt"
 
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/jonesrussell/goforms/internal/application/logging"
 	"github.com/jonesrussell/goforms/internal/application/repositories/database"
 	"github.com/jonesrussell/goforms/internal/domain/common"
-	"golang.org/x/crypto/bcrypt"
 )
 
 // Repository defines the interface for user repository operations.

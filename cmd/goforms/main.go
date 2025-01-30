@@ -9,7 +9,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxevent"
-	"go.uber.org/zap"
 
 	"github.com/jonesrussell/goforms/internal/application"
 	"github.com/jonesrussell/goforms/internal/application/config"
@@ -35,12 +34,17 @@ var (
 var appLogger logging.Logger
 
 func main() {
-	cfg := loggingconfig.NewConfig()
-	appLogger = logging.NewLogger(cfg)
-	defer appLogger.Sync()
+	cfg := loggingconfig.NewConfig()   // Create the logging configuration
+	appLogger = logging.NewLogger(cfg) // Initialize your logger with the configuration
+
+	defer func() {
+		if err := appLogger.Sync(); err != nil {
+			log.Printf("failed to sync logger: %v", err) // Handle the error
+		}
+	}()
 
 	if err := run(); err != nil {
-		appLogger.Fatal("Application failed to start", zap.Error(err))
+		appLogger.Fatal("Application failed to start", logging.Error(err)) // Use logging package for error
 	}
 }
 
@@ -121,7 +125,7 @@ type ServerParams struct {
 }
 
 func startServer(p ServerParams) error {
-	appLogger.Debug("starting server with handlers", zap.Int("handler_count", len(p.Handlers)))
+	appLogger.Debug("starting server with handlers", logging.Int("handler_count", len(p.Handlers)))
 
 	for _, handler := range p.Handlers {
 		handler.Register(p.Echo)
@@ -142,10 +146,10 @@ func startServer(p ServerParams) error {
 	}
 
 	appLogger.Info("Starting server",
-		zap.String("addr", addr),
-		zap.String("env", p.Config.App.Env),
-		zap.String("version", version),
-		zap.String("gitCommit", gitCommit),
+		logging.String("addr", addr),
+		logging.String("env", p.Config.App.Env),
+		logging.String("version", version),
+		logging.String("gitCommit", gitCommit),
 	)
 
 	return p.Echo.Start(addr)
