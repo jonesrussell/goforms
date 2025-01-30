@@ -39,13 +39,17 @@ func TestInMemoryTokenRepository_IsTokenBlacklisted(t *testing.T) {
 	repo := NewInMemoryTokenRepository()
 
 	// Save a token and then check if it's blacklisted
-	repo.SaveToken("user1", "token123")
+	err := repo.SaveToken("user1", "token123")
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
 	if repo.IsTokenBlacklisted("token123") {
 		t.Fatal("expected token to not be blacklisted initially")
 	}
 
 	// Blacklist the token
-	err := repo.BlacklistToken("token123")
+	err = repo.BlacklistToken("token123")
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
