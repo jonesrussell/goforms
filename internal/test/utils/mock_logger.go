@@ -4,13 +4,12 @@ import "github.com/jonesrussell/goforms/internal/application/logging"
 
 // MockLogger is a mock implementation of the logging.Logger interface
 type MockLogger struct {
-	DebugFunc         func(msg string, fields ...interface{})
-	ErrorFunc         func(msg string, fields ...logging.Field)
-	InfoFunc          func(msg string, fields ...logging.Field)
-	WarnFunc          func(msg string, fields ...logging.Field)
-	FatalFunc         func(msg string, fields ...logging.Field)
-	LogFunc           func(msg string)
-	LogWithPrefixFunc func(prefix string, msg string)
+	DebugFunc func(msg string, fields ...interface{})
+	ErrorFunc func(msg string, fields ...logging.Field)
+	InfoFunc  func(msg string, fields ...logging.Field)
+	WarnFunc  func(msg string, fields ...logging.Field)
+	FatalFunc func(msg string, fields ...logging.Field)
+	LogFunc   func(msg string)
 }
 
 // Implement the logging.Logger interface methods
@@ -39,12 +38,5 @@ func (m *MockLogger) Fatal(msg string, fields ...logging.Field) {
 func (m *MockLogger) Log(msg string) {
 	if m.LogFunc != nil {
 		m.LogFunc(msg)
-	}
-}
-
-// Implement the LogWithPrefix method
-func (m *MockLogger) LogWithPrefix(prefix string, msg string) {
-	if m.LogWithPrefixFunc != nil {
-		m.LogWithPrefixFunc(prefix, msg)
 	}
 }
