@@ -23,19 +23,14 @@ services:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     env_file:
       - ../.env
-    environment:
-      - MARIADB_ROOT_PASSWORD=root
-      - MARIADB_USER=root
-      - MARIADB_PASSWORD=toor
-      - MARIADB_DATABASE=goforms
     ports:
       - "3306:3306"
       - "8098:8080"  # For adminer
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 10s
-      timeout: 10s
-      retries: 10
+      interval: 15s
+      timeout: 15s
+      retries: 15
     networks:
       - app-net
 

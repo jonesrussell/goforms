@@ -44,15 +44,14 @@
     "customizations": {
         "vscode": {
             "extensions": [
-                "ms-azuretools.vscode-docker",
                 "github.vscode-github-actions",
                 "golang.go",
                 "eamodio.gitlens",
-                "davidanson.vscode-markdownlint",
                 "SanjulaGanepola.github-local-actions",
                 "humao.rest-client",
                 "a-h.templ",
-                "ms-vscode.go-debug"
+                "ms-vscode.go-debug",
+                "docker.docker"
             ],
             "[templ]": {
                 "editor.defaultFormatter": "a-h.templ"
