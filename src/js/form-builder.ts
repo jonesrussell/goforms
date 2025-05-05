@@ -1,25 +1,16 @@
-console.log('form-builder.ts');
-
-import goforms from 'goforms-template';
 import { Formio, Templates } from '@formio/js';
-
-import type { FormSchema } from './schema/form-schema';
 import { validation } from './validation';
 
-// Import Form.io styles
-// import '@formio/js/dist/formio.full.min.css';
+Templates.framework = 'goforms'; // Ensure this is actually required
 
-console.log('goforms', goforms);
-
-Templates.framework = 'goforms';
-export interface FormBuilderOptions {
+interface FormBuilderOptions {
   disabled?: string[];
   noNewEdit?: boolean;
   noDefaultSubmitButton?: boolean;
   alwaysConfirmComponentRemoval?: boolean;
-  formConfig?: object;
+  formConfig?: Record<string, any>;
   resourceTag?: string;
-  editForm?: any;
+  editForm?: Record<string, any>;
   language?: string;
   builder?: object;
   display?: 'form' | 'wizard' | 'pdf';
@@ -30,85 +21,58 @@ export interface FormBuilderOptions {
 
 export class FormBuilder {
   private container: HTMLElement;
-  private builder: any; // Form.io builder instance
+  private builder!: Formio.BuilderInstance;
   private formId: number;
-  private currentSchema: any = {
-    display: 'form',
-    components: []
-  };
+  private currentSchema: Record<string, any> = { display: 'form', components: [] };
 
   constructor(containerId: string, formId: number) {
-    console.log('FormBuilder: constructor called with formId:', formId);
-    const container = document.getElementById(containerId);
-    if (!container) throw new Error(`Container ${containerId} not found`);
-    this.container = container;
-    this.formId = formId;
+    console.log(`Initializing FormBuilder with formId: ${formId}`);
+    this.container = this.getContainer(containerId);
+    this.formId = this.validateFormId(formId);
     this.init();
   }
 
-  private init() {
+  private getContainer(containerId: string): HTMLElement {
+    const container = document.getElementById(containerId);
+    if (!container) throw new Error(`Error: Container '${containerId}' not found.`);
+    return container;
+  }
+
+  private validateFormId(formId: number): number {
+    if (isNaN(formId) || formId < 0) throw new Error(`Error: Invalid form ID '${formId}'.`);
+    return formId;
+  }
+
+  private async init() {
     const builderOptions: FormBuilderOptions = {
       display: 'form',
       noDefaultSubmitButton: true,
       builder: {
-        basic: {
-          title: 'Basic Fields',
-          default: true,
-          weight: 0,
-          components: {
-            textfield: true,
-            textarea: true,
-            email: true,
-            phoneNumber: true,
-            number: true,
-            password: true,
-            checkbox: true,
-            select: true,
-            radio: true,
-            button: true,
-          }
-        },
-        advanced: false,
-        layout: false,
-        data: false,
-        premium: false,
-        resource: false
+        basic: { title: 'Basic Fields', default: true, weight: 0, components: { textfield: true } },
       }
     };
 
-    Formio.builder(this.container, {}, builderOptions).then((builder: any) => {
-      this.builder = builder;
-      this.loadExistingSchema();
-    });
+    try {
+      const schema = await this.loadExistingSchema();
+      this.builder = await Formio.builder(this.container, schema, builderOptions);
+    } catch (error) {
+      console.error('Initialization failed:', error);
+    }
   }
 
-  private async loadExistingSchema() {
+  private async loadExistingSchema(): Promise<any> {
+    if (this.formId === 0) return { display: 'form', components: [] };
+
     try {
-      if (this.formId === 0) {
-        return;
-      }
-      console.log('Loading form schema for form ID:', this.formId);
-      const response = await validation.fetchWithCSRF(`/dashboard/forms/${this.formId}/schema`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      if (response.ok) {
-        const schema = await response.json();
-        console.log('Loaded form schema:', schema);
-        this.builder.setForm(schema);
-        this.currentSchema = schema;
-      } else {
-        if (response.status === 401) {
-          console.error('Not authenticated, redirecting to login');
-          window.location.href = '/login';
-        } else {
-          console.error('Failed to load form schema:', response.status, response.statusText);
-        }
-      }
+      const response = await validation.fetchWithCSRF(`/dashboard/forms/${this.formId}/schema`, { method: 'GET' });
+      if (!response.ok) throw new Error(`Failed to load schema: ${response.status} ${response.statusText}`);
+
+      const schema = await response.json();
+      console.log(`Loaded form schema for form ID: ${this.formId}`, schema);
+      return schema; // ✅ Return the schema properly
     } catch (error) {
-      console.error('Failed to load form schema:', error);
+      console.error('Error loading form schema:', error);
+      return { display: 'form', components: [] }; // Fallback schema
     }
   }
 
@@ -117,36 +81,18 @@ export class FormBuilder {
       const formioSchema = this.builder.schema;
       const response = await validation.fetchWithCSRF(`/dashboard/forms/${this.formId}/schema`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formioSchema)
       });
-      if (response.ok) {
-        console.log('Schema saved successfully');
-        this.currentSchema = formioSchema;
-        return true;
-      } else {
-        throw new Error('Failed to save schema');
-      }
+
+      if (!response.ok) throw new Error('Failed to save schema');
+
+      console.log('Schema saved successfully:', formioSchema);
+      this.currentSchema = formioSchema;
+      return true;
     } catch (error) {
-      console.error('Failed to save form schema:', error);
+      console.error('Error saving form schema:', error);
       return false;
-    }
-  }
-}
-
-// Initialize form builder when the module is loaded
-const formSchemaBuilder = document.getElementById('form-schema-builder');
-
-if (formSchemaBuilder) {
-  const formIdAttr = formSchemaBuilder.getAttribute('data-form-id');
-  if (formIdAttr) {
-    const formId = parseInt(formIdAttr, 10);
-    if (!isNaN(formId)) {
-      (window as any).formBuilderInstance = new FormBuilder('form-schema-builder', formId);
-    } else {
-      console.error('FormBuilder: Invalid form ID:', formIdAttr);
     }
   }
 }
