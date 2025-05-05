@@ -1,17 +1,17 @@
 console.log('form-builder.ts');
 
-// import goforms from 'goforms-template';
-import { Formio } from '@formio/js';
+import goforms from 'goforms-template';
+import { Formio, Templates } from '@formio/js';
+
 import type { FormSchema } from './schema/form-schema';
 import { validation } from './validation';
 
 // Import Form.io styles
-import '@formio/js/dist/formio.full.min.css';
+// import '@formio/js/dist/formio.full.min.css';
 
-// console.log('goforms', goforms);
+console.log('goforms', goforms);
 
-// Formio.use(goforms);
-
+Templates.framework = 'goforms';
 export interface FormBuilderOptions {
   disabled?: string[];
   noNewEdit?: boolean;
@@ -51,12 +51,28 @@ export class FormBuilder {
       display: 'form',
       noDefaultSubmitButton: true,
       builder: {
-        basic: {},
-        advanced: {},
-        layout: {},
+        basic: {
+          title: 'Basic Fields',
+          default: true,
+          weight: 0,
+          components: {
+            textfield: true,
+            textarea: true,
+            email: true,
+            phoneNumber: true,
+            number: true,
+            password: true,
+            checkbox: true,
+            select: true,
+            radio: true,
+            button: true,
+          }
+        },
+        advanced: false,
+        layout: false,
         data: false,
         premium: false,
-        resource: {}
+        resource: false
       }
     };
 
@@ -122,6 +138,7 @@ export class FormBuilder {
 
 // Initialize form builder when the module is loaded
 const formSchemaBuilder = document.getElementById('form-schema-builder');
+
 if (formSchemaBuilder) {
   const formIdAttr = formSchemaBuilder.getAttribute('data-form-id');
   if (formIdAttr) {
@@ -133,7 +150,3 @@ if (formSchemaBuilder) {
     }
   }
 }
-
-console.log('Basic components in Form.io:', Object.values(Formio.Components.components)
-  .filter(c => (c as any).builderInfo && (c as any).builderInfo.group === 'basic')
-  .map(c => (c as any).builderInfo)); 
