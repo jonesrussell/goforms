@@ -4,6 +4,7 @@ import autoprefixer from 'autoprefixer';
 import postcssImport from 'postcss-import';
 import postcssNested from 'postcss-nested';
 import cssnano from 'cssnano';
+import path from 'path';
 
 export default defineConfig({
   root: '.',
@@ -94,8 +95,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src/js'),
-      'goforms-template': resolve(__dirname, '../goforms-template/src/index.ts')
+      '@': resolve(__dirname, 'src'),
+      'goforms-template': path.resolve(__dirname, '../goforms-template/lib/index.js'),
     },
     extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
   },
